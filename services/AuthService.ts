@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL, ROUTES, STORAGE_KEYS } from '../constants/Config';
 import { LoginRequest, LoginResponse, RegisterRequest, User } from '../types/Auth';
+import { logger } from '../utils/logger';
 
 //Stock l'utilisateur courant 
 let currentUser: User | null = null;
@@ -66,24 +67,41 @@ export async function tryRestoreSession(): Promise<boolean>{
     const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
     if(!token) return false;
 
-    const userId = await SecureStore.getItemAsync(STORAGE_KEYS.USER_ID);
-    const mail = await SecureStore.getItemAsync(STORAGE_KEYS.USER_EMAIL);
-    const role = await SecureStore.getItemAsync(STORAGE_KEYS.USER_ROLE);
+        try {
+        const response = await fetch (`${API_BASE_URL}${ROUTES.ME}`,{
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
 
-      if (!userId || !mail || !role) {
-    await logout();
-    return false;
-  }
+        if (!response.ok) {
+            logger.warn('AuthService', 'Token invalide, nettoyage session');
+            await logout();
+            return false;
+        }
 
-  currentUser = {
-    id: parseInt(userId),
-    mail,
-    role,
-    prenom: '',
-    nom: '',
-  };
+        const userData = await response.json();
 
-  return true;
+        currentUser = {
+            id: userData.id,
+            mail: userData.mail,
+            prenom: userData.prenom,
+            nom: userData.nom,
+            role: userData.role,
+        };
+
+        await SecureStore.setItemAsync(STORAGE_KEYS.USER_ID, userData.id.toString());
+        await SecureStore.setItemAsync(STORAGE_KEYS.USER_EMAIL, userData.mail);
+        await SecureStore.setItemAsync(STORAGE_KEYS.USER_ROLE, userData.role);
+
+        return true;
+    }catch(error){
+        logger.error('AuthService', 'Erreur réseau lors de la restauration de session', error);
+        await logout();
+        return false;
+    }
 }
 
 //Stocke la session après un login/register 
