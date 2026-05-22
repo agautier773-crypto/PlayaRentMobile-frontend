@@ -5,4 +5,5 @@ export type Station = {
     latitude: number;
     longitude: number;
     nombreComposants: number;
+    estVisible: boolean;
 } 

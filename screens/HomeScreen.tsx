@@ -42,7 +42,7 @@ export default function HomeScreen({ navigation }: Props) {
   const loadStations = async () => {
     try {
       const data = await getAllStations();
-      setStations(data);
+      setStations(data.filter(s => s.estVisible));
     }catch (error) {
       logger.error('HomeScreen', 'Erreur chargement stations', error);
     }

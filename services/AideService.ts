@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL, ROUTES, STORAGE_KEYS } from '../constants/Config';
-import { LocationEtape, PratiqueEtape } from '../types/Aide';
+import { LocationEtape, PratiqueEtape, obligations } from '../types/Aide';
 import { logger } from '../utils/logger';
 
 // Récupère les étapes de location
@@ -74,3 +74,24 @@ export async function getEtapesPaddle(): Promise<PratiqueEtape[]>{
 
     return data;
 } 
+export async function getObligations(): Promise<obligations[]>{
+    const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
+    if(!token){
+        throw new Error ('Aucun token dispo');
+    }
+    const url = `${API_BASE_URL}${ROUTES.AIDE_REGLES}`;
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+    if (!response.ok) {
+        logger.error('AideService', `Erreur récupération étapes (status ${response.status})`);
+        throw new Error('Impossible de récupérer les étapes');
+    }
+    const data: obligations[] = await response.json();
+    return data;
+}

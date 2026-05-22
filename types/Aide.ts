@@ -10,3 +10,9 @@ export type PratiqueEtape = {
   description: string;
   imageKey?: string;
 };
+
+export type obligations = {
+  type: string; 
+  titre: string;
+  regles: string[];
+}

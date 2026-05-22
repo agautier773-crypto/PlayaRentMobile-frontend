@@ -18,8 +18,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { RootStackParamList } from '../navigation/AppNavigation';
-import { getEtapesCanoe, getEtapesLocation, getEtapesPaddle } from '../services/AideService';
-import { LocationEtape, PratiqueEtape } from '../types/Aide';
+import { getEtapesCanoe, getEtapesLocation, getEtapesPaddle, getObligations } from '../services/AideService';
+import { LocationEtape, PratiqueEtape, obligations } from '../types/Aide';
 import { logger } from '../utils/logger';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -44,6 +44,8 @@ export default function AideConseilsScreen({ navigation }: Props) {
 const [etapesCanoe, setEtapesCanoe] = useState<PratiqueEtape[]>([]);
 const [etapesPaddle, setEtapesPaddle] = useState<PratiqueEtape[]>([]);
 const [loadingSurLEau, setLoadingSurLEau] = useState(false);
+const [obligations, setObligations] = useState<obligations[]>([]);
+const [loadingRegles, setLoadingRegles] = useState(false);
 
   // Charge les étapes au montage
   useEffect(() => {
@@ -77,6 +79,24 @@ const [loadingSurLEau, setLoadingSurLEau] = useState(false);
         logger.error('AideConseils', 'Erreur chargement sur l\eau', error);
       }finally {
         setLoadingSurLEau(false);
+      }
+    })();
+  }, [activeTab]);
+
+  //Charge les règles la première fois qu'on ouvre l'onglet 
+  useEffect(() => {
+    if(activeTab !== 'REGLES') return;
+    if(obligations.length > 0) return;
+
+    (async () => {
+      setLoadingRegles(true);
+      try {
+        const data = await getObligations();
+        setObligations(data);
+      }catch (error){
+        logger.error('AideConseils', 'Erreur chargement des règles', error);
+      }finally {
+        setLoadingRegles(false);
       }
     })();
   }, [activeTab]);
@@ -282,12 +302,44 @@ const renderPratiqueEtape = ({ item }: { item: PratiqueEtape }) => {
   </>
 )}
 
-        {activeTab === 'REGLES' && (
-          <View style={styles.placeholderContainer}>
-            <Text style={styles.placeholderText}></Text>
-          </View>
-        )}
-      </View>
+{activeTab === 'REGLES' && (
+  <>
+    {loadingRegles ? (
+      <ActivityIndicator size="large" color={Colors.PlayaBlue} style={{ marginTop: 40 }} />
+    ) : (
+      <ScrollView 
+        contentContainerStyle={styles.reglesContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {obligations.map((item) => {
+          const isObligation = item.type === 'OBLIGATION';
+          const cardStyle = isObligation ? styles.cardObligation : styles.cardInterdiction;
+          const iconBg = isObligation ? styles.iconBgObligation : styles.iconBgInterdiction;
+          const icon = isObligation ? '✓' : '✕';
+          
+          return (
+            <View key={item.type} style={[styles.regleCard, cardStyle]}>
+              <View style={styles.regleHeader}>
+                <View style={[styles.regleIconCircle, iconBg]}>
+                  <Text style={styles.regleIconText}>{icon}</Text>
+                </View>
+                <Text style={styles.regleTitre}>{item.titre}</Text>
+              </View>
+              {item.regles.map((regle, index) => (
+                <View key={index} style={styles.reglePuce}>
+                  <Text style={styles.reglePuceBullet}>•</Text>
+                  <Text style={styles.reglePuceText}>{regle}</Text>
+                </View>
+              ))}
+            </View>
+          );
+        })}
+      </ScrollView>
+    )}
+  </>
+)}
+    
+    </View>
 
       {/* BOTTOM NAV */}
       <View style={styles.bottomNav}>
@@ -524,5 +576,73 @@ cardImageSmall: {
   height: 80,
   borderRadius: 8,
   marginRight: 12,
+},
+reglesContainer: {
+  paddingHorizontal: 20,
+  paddingVertical: 16,
+  paddingBottom: 32,
+},
+regleCard: {
+  borderRadius: 16,
+  padding: 20,
+  marginBottom: 16,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 6,
+  elevation: 4,
+},
+cardObligation: {
+  backgroundColor: Colors.PlayaBlue,
+},
+cardInterdiction: {
+  backgroundColor: Colors.PlayaOrange,
+},
+regleHeader: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 12,
+},
+regleIconCircle: {
+  width: 28,
+  height: 28,
+  borderRadius: 14,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginRight: 10,
+},
+iconBgObligation: {
+  backgroundColor: Colors.PlayaYellow,
+},
+iconBgInterdiction: {
+  backgroundColor: '#FFFFFF',
+},
+regleIconText: {
+  color: Colors.PlayaBlue,
+  fontSize: 14,
+  fontFamily: Fonts.bold,
+},
+regleTitre: {
+  flex: 1,
+  fontSize: 18,
+  color: '#FFFFFF',
+  fontFamily: Fonts.bold,
+},
+reglePuce: {
+  flexDirection: 'row',
+  marginBottom: 6,
+  paddingLeft: 4,
+},
+reglePuceBullet: {
+  color: '#FFFFFF',
+  fontSize: 14,
+  marginRight: 8,
+  lineHeight: 20,
+},
+reglePuceText: {
+  flex: 1,
+  color: '#FFFFFF',
+  fontSize: 13,
+  lineHeight: 20,
 },
 });
