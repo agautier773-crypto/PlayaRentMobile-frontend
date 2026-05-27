@@ -5,6 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
+  FlatList,
+  ScrollView,
 } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetScrollView  } from '@gorhom/bottom-sheet';
 import { getStationById } from '../services/StationService';
@@ -12,6 +15,8 @@ import { Station } from '../types/Stations';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { logger } from '../utils/logger';
+import { getPhotosByStation } from '../services/PhotoService';
+import { Photo } from '../types/Photo';
 
 export type StationDetailSheetRef = {
   open: (stationId: string) => void;
@@ -23,6 +28,8 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
   const [station, setStation] = useState<Station | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
 
   // Points d'arrêt du sheet : 35% (preview) et 80% (étendu)
   const snapPoints = useMemo(() => ['35%', '80%'], []);
@@ -43,9 +50,11 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
     setLoading(true);
     setError(null);
     setStation(null);
+    setPhotos([]);
     try {
       const data = await getStationById(stationId);
       setStation(data);
+      loadPhotos(stationId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue';
       setError(message);
@@ -54,6 +63,18 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
       setLoading(false);
     }
   };
+// fonction de chargement des photos 
+  const loadPhotos = async (stationId: string) => {
+  setLoadingPhotos(true);
+  try {
+    const data = await getPhotosByStation(stationId);
+    setPhotos(data);
+  } catch (err) {
+    logger.error('StationDetailSheet', 'Erreur chargement photos', err);
+  } finally {
+    setLoadingPhotos(false);
+  }
+};
 
   return (
     <BottomSheet
@@ -95,7 +116,7 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
             </View>
 
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>🛶 Équipements</Text>
+              <Text style={styles.infoLabel}> Équipements</Text>
               <Text style={styles.infoValueBig}>{station.nombreComposants}</Text>
             </View>
 
@@ -105,6 +126,36 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
                 {station.latitude.toFixed(6)}, {station.longitude.toFixed(6)}
               </Text>
             </View>
+                    {/* Section Photos */}
+                    {photos.length > 0 && (
+                    <View style={styles.photosSection}>
+                        <Text style={styles.sectionTitle}>Photos</Text>
+                        <View style={styles.photosGrid}>
+                        {photos.map((photo) => (
+                            <View key={photo.idPhoto} style={styles.photoCard}>
+                            <Image
+                                source={{ uri: photo.url }}
+                                style={styles.photoImage}
+                                resizeMode="cover"
+                            />
+                            {photo.titre && (
+                                <Text style={styles.photoTitre} numberOfLines={1}>
+                                {photo.titre}
+                                </Text>
+                            )}
+                            </View>
+                        ))}
+                        </View>
+                    </View>
+                    )}
+
+                    {loadingPhotos && (
+                    <ActivityIndicator size="small" color={Colors.PlayaBlue} style={{ marginVertical: 16 }} />
+                    )}
+
+                {loadingPhotos && (
+                <ActivityIndicator size="small" color={Colors.PlayaBlue} style={{ marginVertical: 16 }} />
+                )}
 
             <TouchableOpacity
               style={[
@@ -226,4 +277,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.bold,
   },
+photosSection: {
+  marginTop: 20,
+  marginBottom: 16,
+},
+photosGrid: {
+  flexDirection: 'row',
+  flexWrap: 'wrap',          // ← LA MAGIE : passe à la ligne si pas de place
+  gap: 12,                   // espacement entre les photos
+},
+sectionTitle: {
+  fontSize: 14,
+  fontFamily: Fonts.bold,
+  color: Colors.PlayaBlue,
+  marginBottom: 12,
+  textTransform: 'uppercase',
+  letterSpacing: 0.5,
+},
+photoCard: {
+  width: 160,                // largeur fixe pour que ça wrap proprement
+  borderRadius: 12,
+  overflow: 'hidden',
+  // pas de fond
+},
+photoImage: {
+  width: 160,
+  height: 110,
+},
+photoTitre: {
+  fontSize: 12,
+  color: '#666',
+  paddingTop: 6,
+  paddingHorizontal: 4,
+},
 });

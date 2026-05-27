@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigation';
 import { useNavigation } from '@react-navigation/native';
 import StationDetailSheet, { StationDetailSheetRef } from '../components/StationDetailSheet';
+import { useFocusEffect } from '@react-navigation/native';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -51,9 +53,12 @@ export default function HomeScreen() {
       logger.error('HomeScreen', 'Erreur chargement stations', error);
     }
   };
-  useEffect(() => {
+  // refresh les markers a chauqe fois que l'ecran devient actif 
+  useFocusEffect(
+    useCallback(() => {
     loadStations();
-  }, []);
+  }, [])
+);
 
 // On injecte les stations sur la carte 
   const injectStations = (data: Station[]) => {

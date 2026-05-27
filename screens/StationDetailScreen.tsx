@@ -17,6 +17,7 @@ import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { logger } from '../utils/logger';
 
+
 type RouteParams = {
   StationDetail: { stationId: string };
 };
@@ -39,9 +40,11 @@ export default function StationDetailScreen() {
   const loadStation = async () => {
     setLoading(true);
     setError(null);
+    
     try {
       const data = await getStationById(stationId);
       setStation(data);
+    
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue';
       setError(message);
@@ -117,7 +120,7 @@ export default function StationDetailScreen() {
             <Text style={styles.sectionTitle}>Informations</Text>
 
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>🛶 Équipements disponibles</Text>
+              <Text style={styles.infoLabel}>Équipements disponibles</Text>
               <Text style={styles.infoValueBig}>{station.nombreComposants}</Text>
             </View>
 
