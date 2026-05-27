@@ -1,6 +1,6 @@
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
 
-// 🎯 Définir la "forme" des props avec TypeScript
+// Définir la "forme" des props avec TypeScript
 type BoutonCustomProps = {
   text: string;
   backgroundColor: string;
@@ -10,7 +10,7 @@ type BoutonCustomProps = {
   textColor?: string;       // optionnel : pour cas particuliers
 };
 
-// 🎯 Le composant qui reçoit les props
+// Le composant qui reçoit les props
 export default function BoutonCustom({
   text,
   backgroundColor,

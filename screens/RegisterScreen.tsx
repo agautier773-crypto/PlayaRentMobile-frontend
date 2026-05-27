@@ -8,6 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import { isValidEmail, checkPasswordStrength, isValidName } from '../utils/validator';
 import AuthLayout from '../components/AuthLayout';
 import BoutonCustom from '../components/BoutonCustom';
+import { Ionicons } from '@expo/vector-icons';
+
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -135,7 +137,7 @@ export default function RegisterScreen({ navigation }: Props) {
           onPress={() => setShowPassword(!showPassword)}
           style={styles.eyeButton}
         >
-          <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '🙈'}</Text>
+          <Text style={styles.eyeIcon}>{showPassword ? '' : ''}</Text>
         </TouchableOpacity>
       </View>
 
@@ -163,7 +165,7 @@ export default function RegisterScreen({ navigation }: Props) {
           onPress={() => setShowPasswordConfirm(!showPasswordConfirm)}
           style={styles.eyeButton}
         >
-          <Text style={styles.eyeIcon}>{showPasswordConfirm ? '👁️' : '🙈'}</Text>
+          <Text style={styles.eyeIcon}>{showPasswordConfirm ? '' : ''}</Text>
         </TouchableOpacity>
       </View>
       {showValidation && !validation.passwordsMatch && (

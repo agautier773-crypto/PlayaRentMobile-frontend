@@ -8,12 +8,12 @@ import RegisterScreen from '../screens/RegisterScreen';
 import { useAuth } from '../context/AuthContext';
 import AideConseilsScreen from '../screens/AideConseilsScreen';
 
-
 export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
     Home: undefined;
     AideConseils: undefined;
+    StationDetail: { stationId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

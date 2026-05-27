@@ -24,3 +24,29 @@ export async function getAllStations(): Promise<Station[]>{
     
     return data;
 }
+
+export async function getStationById(id: string): Promise<Station>{
+    const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
+    if(!token) throw new Error('Aucun token dispo');
+
+    const url = `${API_BASE_URL}${ROUTES.STATIONS}/${id}`;
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok){
+        if(response.status === 404){
+            throw new Error('Station introuvable');
+        }
+        throw new Error ('Erreur récupération station (status ${response.status})');
+    }
+
+    const data: Station = await response.json();
+    logger.info('StationService', `Station ${id} récupérée`);
+    return data;
+}

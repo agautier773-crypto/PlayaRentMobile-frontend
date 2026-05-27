@@ -23,6 +23,8 @@ import { logger } from '../utils/logger';
 import { PLAYA_LOGO_SVG } from '../constants/Logos';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigation';
+import { useNavigation } from '@react-navigation/native';
+import StationDetailSheet, { StationDetailSheetRef } from '../components/StationDetailSheet';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -33,11 +35,13 @@ const INITIAL_ZOOM = 13;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
-export default function HomeScreen({ navigation }: Props) {
+export default function HomeScreen() {
+  const navigation = useNavigation<any>();
   const { logout } = useAuth();
   const webViewRef = useRef<WebView>(null);
   const [stations, setStations] = useState<Station[]>([]);
   const [mapReady, setMapReady] = useState(false);
+  const stationSheetRef = useRef<StationDetailSheetRef>(null);
 
   const loadStations = async () => {
     try {
@@ -144,9 +148,15 @@ export default function HomeScreen({ navigation }: Props) {
                   }).addTo(map);
 
                 marker.bindPopup(
+                  '<div style="text-align:center;">' +
                   '<b>' + s.nom + '</b><br/>' +
                   'État : ' + s.etat + '<br/>' +
-                  s.nombreComposants + ' équipements'
+                  s.nombreComposants + ' équipements<br/>' +
+                  '<button onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type:\\'stationClicked\\', stationId:\\'' + s.id + '\\'}))" ' +
+                  'style="margin-top:8px;padding:6px 12px;background:#015060;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">' +
+                  'Voir le détail' +
+                  '</button>' +
+                  '</div>'
                 );
                 stationMarkers.push(marker);
               });
@@ -194,6 +204,9 @@ export default function HomeScreen({ navigation }: Props) {
       if(data.type === 'mapReady'){
         
         setMapReady(true);
+      }
+      else if (data.type === 'stationClicked'){
+        stationSheetRef.current?.open(data.stationId);
       }
     }catch (err){
       logger.error('HomeScreen', 'Erreur de chargement de la WebView', err);
@@ -295,6 +308,7 @@ export default function HomeScreen({ navigation }: Props) {
           <Text style={styles.navLabel}>Conseils</Text>
         </TouchableOpacity>
       </View>
+        <StationDetailSheet ref={stationSheetRef} />
     </SafeAreaView>
   );
 }

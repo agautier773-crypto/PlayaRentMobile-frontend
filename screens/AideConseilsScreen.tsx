@@ -566,7 +566,7 @@ cardTitleInline: {
 cardImage: {
   width: '100%',
   height: 160,
-  backgroundColor: '#E0E0E0',   // gris si l'image met du temps à charger
+  backgroundColor: '#E0E0E0',
 },
 cardBody: {
   padding: 24,
