@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   },
   wave: {
     marginTop: -1,
-    backgroundColor: 'transparent',
+    backgroundColor:'transparent',
   },
   mapContainer: {
     flex: 1,

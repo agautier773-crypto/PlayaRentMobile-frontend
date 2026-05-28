@@ -12,7 +12,6 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Colors } from '../constants/Colors';
@@ -24,6 +23,7 @@ import { logger } from '../utils/logger';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getConseilImage } from '../constants/Images';
+import BlueHeader from '../components/HeaderBlue';
 
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AideConseils'>;
@@ -150,28 +150,8 @@ const renderPratiqueEtape = ({ item }: { item: PratiqueEtape }) => {
   return (
     <View style={styles.container}>
       {/* HEADER BLEU */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        
-        <Image
-          source={require('../assets/logo_playarent.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <Text style={styles.headerTitle}>Aide & Conseils</Text>
-      </View>
-            <Svg
-              width={SCREEN_WIDTH}
-              height={30}
-              viewBox={`0 0 ${SCREEN_WIDTH} 30`}
-              style={styles.wave}
-            >
-              <Path
-                d={`M0,0 Q${SCREEN_WIDTH * 0.25},30 ${SCREEN_WIDTH * 0.5},15 T${SCREEN_WIDTH},10 L${SCREEN_WIDTH},0 Z`}
-                fill={Colors.PlayaBlue}
-              />
-            </Svg>
+      <BlueHeader title="Aide & Conseils" showBackButton showLogo />
       
-
       {/* TABS */}
       <View style={styles.tabsContainer}>
         <TouchableOpacity

@@ -16,6 +16,7 @@ import { Station } from '../types/Stations';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { logger } from '../utils/logger';
+import BlueHeader from '../components/HeaderBlue';
 
 export default function FavorisScreen() {
   const navigation = useNavigation();
@@ -62,13 +63,7 @@ export default function FavorisScreen() {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>← Retour</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mes Favoris</Text>
-        <View style={{ width: 60 }} />
-      </View>
+      <BlueHeader title="Mes Favoris" showBackButton showLogo />
 
       {/* Contenu */}
       {loading ? (
@@ -133,7 +128,7 @@ export default function FavorisScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFDA6F',
   },
   header: {
     backgroundColor: Colors.PlayaBlue,

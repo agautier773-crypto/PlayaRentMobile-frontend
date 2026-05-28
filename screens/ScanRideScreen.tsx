@@ -16,6 +16,7 @@ import { isUrlAllowed } from '../constants/AllowedDomains';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { logger } from '../utils/logger';
+import BlueHeader from '../components/HeaderBlue';
 
 export default function ScanRideScreen() {
   const navigation = useNavigation();
@@ -83,99 +84,79 @@ export default function ScanRideScreen() {
     processUrl(fullUrl);
   };
 
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>← Retour</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Scan & Ride</Text>
-        <View style={{ width: 60 }} />
-      </View>
-
-      {manualMode ? (
-        /* MODE SAISIE MANUELLE */
-        <View style={styles.manualContainer}>
-          <Text style={styles.manualTitle}>Saisie manuelle du code</Text>
-          <Text style={styles.manualSubtitle}>
-            Entre le code qui suit le lien playa-rent.fr sous le Qr Code
-          </Text>
-            <View style={styles.inputWrapper}>
-                <Text style={styles.prefix}>{URL_PREFIX}</Text>
-                <TextInput
-                    style={styles.codeInput}
-                    value={manualCode}
-                    onChangeText={setManualCode}
-                    autoCapitalize="characters"
-                    autoCorrect={false}
-                />
-            </View>
-          <TouchableOpacity style={styles.submitButton} onPress={handleManualSubmit}>
-            <Text style={styles.submitButtonText}>Valider</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.switchButton}
-            onPress={() => setManualMode(false)}
-          >
-            <Text style={styles.switchButtonText}>← Revenir au scan</Text>
-          </TouchableOpacity>
-        </View>
-      ) : permission?.granted ? (
-        /* MODE CAMÉRA */
-        <View style={styles.cameraContainer}>
-          <CameraView
-            style={styles.camera}
-            facing="back"
-            barcodeScannerSettings={{
-              barcodeTypes: ['qr'],
-            }}
-            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+return (
+  <View style={styles.container}>
+    {/* CONTENU D'ABORD (caméra / manuel / pas de permission) */}
+    {manualMode ? (
+      /* MODE SAISIE MANUELLE */
+      <View style={styles.manualContainer}>
+        <Text style={styles.manualTitle}>Saisie manuelle du code</Text>
+        <Text style={styles.manualSubtitle}>
+          Entre le code qui suit le lien playa-rent.fr sous le Qr Code
+        </Text>
+        <View style={styles.inputWrapper}>
+          <Text style={styles.prefix}>{URL_PREFIX}</Text>
+          <TextInput
+            style={styles.codeInput}
+            value={manualCode}
+            onChangeText={setManualCode}
+            autoCapitalize="characters"
+            autoCorrect={false}
           />
-          {/* Cadre de visée */}
-          <View style={styles.overlay}>
-            <View style={styles.scanFrame} />
-            <Text style={styles.scanHint}>
-              Place le QR code dans le cadre
-            </Text>
-          </View>
-          {/* Bouton plan B */}
-          <TouchableOpacity
-            style={styles.manualSwitchButton}
-            onPress={() => setManualMode(true)}
-          >
-            <Text style={styles.manualSwitchText}>
-              Caméra ne fonctionne pas ? Saisir le lien
-            </Text>
-          </TouchableOpacity>
         </View>
-      ) : (
-        /* PAS DE PERMISSION */
-        <View style={styles.noPermission}>
-          <Text style={styles.noPermissionText}>
-            L'accès à la caméra est nécessaire pour scanner les QR codes.
+        <TouchableOpacity style={styles.submitButton} onPress={handleManualSubmit}>
+          <Text style={styles.submitButtonText}>Valider</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.switchButton} onPress={() => setManualMode(false)}>
+          <Text style={styles.switchButtonText}>← Revenir au scan</Text>
+        </TouchableOpacity>
+      </View>
+    ) : permission?.granted ? (
+      /* MODE CAMÉRA */
+      <View style={styles.cameraContainer}>
+        <CameraView
+          style={styles.camera}
+          facing="back"
+          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+        />
+        <View style={styles.overlay}>
+          <View style={styles.scanFrame} />
+          <Text style={styles.scanHint}>Place le QR code dans le cadre</Text>
+        </View>
+        <TouchableOpacity style={styles.manualSwitchButton} onPress={() => setManualMode(true)}>
+          <Text style={styles.manualSwitchText}>
+            Caméra ne fonctionne pas ? Saisir le lien
           </Text>
-          <TouchableOpacity style={styles.submitButton} onPress={requestPermission}>
-            <Text style={styles.submitButtonText}>Autoriser la caméra</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.switchButton}
-            onPress={() => setManualMode(true)}
-          >
-            <Text style={styles.switchButtonText}>Ou saisir le lien manuellement</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+        </TouchableOpacity>
+      </View>
+    ) : (
+      /* PAS DE PERMISSION */
+      <View style={styles.noPermission}>
+        <Text style={styles.noPermissionText}>
+          L'accès à la caméra est nécessaire pour scanner les QR codes.
+        </Text>
+        <TouchableOpacity style={styles.submitButton} onPress={requestPermission}>
+          <Text style={styles.submitButtonText}>Autoriser la caméra</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.switchButton} onPress={() => setManualMode(true)}>
+          <Text style={styles.switchButtonText}>Ou saisir le lien manuellement</Text>
+        </TouchableOpacity>
+      </View>
+    )}
+
+    {/* HEADER PAR-DESSUS, en absolu */}
+    <View style={styles.headerOverlay}>
+      <BlueHeader title="Scan&ride" showBackButton showLogo />
     </View>
-  );
+  </View>
+);
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: Colors.PlayaBlue,
   },
   header: {
     backgroundColor: Colors.PlayaBlue,
@@ -205,11 +186,13 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 160,
   },
   scanFrame: {
-    width: 250,
-    height: 250,
-    borderWidth: 3,
+    width: 300,
+    height: 300,
+    borderWidth: 5,
+    paddingTop: 240,
     borderColor: Colors.PlayaYellow,
     borderRadius: 20,
     backgroundColor: 'transparent',
@@ -242,6 +225,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     padding: 24,
+    paddingTop: 160,
     justifyContent: 'center',
   },
   manualTitle: {
@@ -288,6 +272,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     padding: 24,
+    paddingTop: 160,
     justifyContent: 'center',
   },
   noPermissionText: {
@@ -316,5 +301,13 @@ codeInput: {
   paddingHorizontal: 16,
   backgroundColor: '#FFFF',
   textAlign: 'center',
+},
+headerOverlay: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 100,
+  elevation: 100,
 },
 });
