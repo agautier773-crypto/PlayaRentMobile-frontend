@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
-  FlatList,
-  ScrollView,
 } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetScrollView  } from '@gorhom/bottom-sheet';
 import { getStationById } from '../services/StationService';
@@ -17,6 +15,8 @@ import { Fonts } from '../constants/Fonts';
 import { logger } from '../utils/logger';
 import { getPhotosByStation } from '../services/PhotoService';
 import { Photo } from '../types/Photo';
+import { addFavori, removeFavori, getFavoris } from '../services/FavoriService';
+import { Ionicons } from '@expo/vector-icons';
 
 export type StationDetailSheetRef = {
   open: (stationId: string) => void;
@@ -30,7 +30,8 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
   const [error, setError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
-
+  const [isFavori, setIsFavori] = useState(false);
+  const [favoriLoading, setFavoriLoading] = useState(false);
   // Points d'arrêt du sheet : 35% (preview) et 80% (étendu)
   const snapPoints = useMemo(() => ['35%', '80%'], []);
 
@@ -51,10 +52,12 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
     setError(null);
     setStation(null);
     setPhotos([]);
+    setIsFavori(false);
     try {
       const data = await getStationById(stationId);
       setStation(data);
       loadPhotos(stationId);
+      checkFavoriStatus(stationId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue';
       setError(message);
@@ -75,6 +78,35 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
     setLoadingPhotos(false);
   }
 };
+// Vérifie si la station est en favori
+const checkFavoriStatus = async (stationId: string) => {
+  try {
+    const favoris = await getFavoris();
+    const estFavori = favoris.some((s) => s.id === stationId);
+    setIsFavori(estFavori);
+  } catch (err) {
+    logger.error('StationDetailSheet', 'Erreur vérification favori', err);
+  }
+};
+const toggleFavori = async () => {
+  if (!station || favoriLoading) return;
+  
+  setFavoriLoading(true);
+  try {
+    if (isFavori) {
+      await removeFavori(station.id);
+      setIsFavori(false);
+    } else {
+      await addFavori(station.id);
+      setIsFavori(true);
+    }
+  } catch (err) {
+    logger.error('StationDetailSheet', 'Erreur toggle favori', err);
+  } finally {
+    setFavoriLoading(false);
+  }
+};
+
 
   return (
     <BottomSheet
@@ -98,8 +130,22 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
           </View>
         ) : station ? (
           <BottomSheetScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.stationName}>{station.nom}</Text>
-
+            <View style={styles.titleRow}>
+              <Text style={styles.stationName}>{station.nom}</Text>
+              <TouchableOpacity 
+                onPress={toggleFavori} 
+                disabled={favoriLoading}
+                activeOpacity={1}
+                style={styles.favoriButton}
+                >
+                  <Ionicons 
+                      name={isFavori ? 'heart' : 'heart-outline'} 
+                      size={28} 
+                      color={Colors.PlayaOrange} 
+                    />
+              </TouchableOpacity>
+            </View>
+            
             <View style={styles.badgeContainer}>
               <View
                 style={[
@@ -283,8 +329,8 @@ photosSection: {
 },
 photosGrid: {
   flexDirection: 'row',
-  flexWrap: 'wrap',          // ← LA MAGIE : passe à la ligne si pas de place
-  gap: 12,                   // espacement entre les photos
+  flexWrap: 'wrap',         
+  gap: 12,                   
 },
 sectionTitle: {
   fontSize: 14,
@@ -295,7 +341,7 @@ sectionTitle: {
   letterSpacing: 0.5,
 },
 photoCard: {
-  width: 160,                // largeur fixe pour que ça wrap proprement
+  width: 160,                
   borderRadius: 12,
   overflow: 'hidden',
   // pas de fond
@@ -309,5 +355,14 @@ photoTitre: {
   color: '#666',
   paddingTop: 6,
   paddingHorizontal: 4,
+},
+titleRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  marginBottom: 4,
+},
+favoriButton: {
+  padding: 4,
 },
 });

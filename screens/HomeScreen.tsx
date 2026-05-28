@@ -294,12 +294,17 @@ export default function HomeScreen() {
 
       {/* BOTTOM NAV JAUNE */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
+        <TouchableOpacity 
+          style={styles.navItem} 
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Favoris')}
+        >
           <Text style={styles.navIcon}>♡</Text>
           <Text style={styles.navLabel}>Favoris</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}
+          onPress={() => navigation.navigate('ScanRide')}>
           <Text style={[styles.navIcon, { color: Colors.PlayaOrange }]}>⊡</Text>
           <Text style={[styles.navLabel, { color: Colors.PlayaOrange }]}>Scan&ride</Text>
         </TouchableOpacity>
