@@ -9,6 +9,8 @@ export const API_BASE_URL = Platform.select({
 export const ROUTES = {
     LOGIN: '/auth/login',
     REGISTER: '/auth/register',
+    REFRESH: '/auth/refresh',
+    LOGOUT: 'auth/logout',
     ME: '/auth/me',
     STATIONS: '/stations',
     AIDE_LOUER: '/aide/louer',
@@ -19,6 +21,7 @@ export const ROUTES = {
 
 export const STORAGE_KEYS = {
     JWT_TOKEN: 'jwt_token', 
+    REFRESH_TOKEN: 'refresh_token',
     USER_ID: 'user_id',
     USER_EMAIL: 'user_email',
     USER_ROLE: 'user_role',

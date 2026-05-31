@@ -1,97 +1,72 @@
-import * as SecureStore from 'expo-secure-store';
-import { API_BASE_URL, ROUTES, STORAGE_KEYS } from '../constants/Config';
+import { fetchWithAuth } from './fetchWithAuth';
+import { ROUTES } from '../constants/Config';
 import { LocationEtape, PratiqueEtape, obligations } from '../types/Aide';
 import { logger } from '../utils/logger';
 
-// Récupère les étapes de location
-
+//Récupère les étapes de location.
 export async function getEtapesLocation(): Promise<LocationEtape[]> {
-    const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
-    if(!token){
-        throw new Error('Aucun token dispo');
-    }
-
-    const url = `${API_BASE_URL}${ROUTES.AIDE_LOUER}`;
-
-    const response = await fetch(url, {
+    const response = await fetchWithAuth(ROUTES.AIDE_LOUER, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
     });
+
     if (!response.ok) {
         logger.error('AideService', `Erreur récupération étapes (status ${response.status})`);
         throw new Error('Impossible de récupérer les étapes');
     }
 
-    const data: LocationEtape[] = await response.json();
-    
-    return data;
+    return await response.json();
 }
 
-export async function getEtapesCanoe(): Promise<PratiqueEtape[]>{
-    const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
-    if(!token){
-        throw new Error ('Aucun token dispo');
-    }
-    const url = `${API_BASE_URL}${ROUTES.AIDE_CANOE}`;
-
-    const response = await fetch(url, {
+//Récupère les étapes pour le canoë / kayak.
+export async function getEtapesCanoe(): Promise<PratiqueEtape[]> {
+    const response = await fetchWithAuth(ROUTES.AIDE_CANOE, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
     });
+
     if (!response.ok) {
-        logger.error('AideService', `Erreur récupération étapes (status ${response.status})`);
+        logger.error('AideService', `Erreur récupération étapes canoe (status ${response.status})`);
         throw new Error('Impossible de récupérer les étapes');
     }
-    const data: PratiqueEtape[] = await response.json();
 
-    return data;
-} 
-export async function getEtapesPaddle(): Promise<PratiqueEtape[]>{
-    const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
-    if(!token){
-        throw new Error ('Aucun token dispo');
-    }
-    const url = `${API_BASE_URL}${ROUTES.AIDE_PADDLE}`;
+    return await response.json();
+}
 
-    const response = await fetch(url, {
+// Récupère les étapes pour le paddle.
+export async function getEtapesPaddle(): Promise<PratiqueEtape[]> {
+    const response = await fetchWithAuth(ROUTES.AIDE_PADDLE, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
     });
+
     if (!response.ok) {
-        logger.error('AideService', `Erreur récupération étapes (status ${response.status})`);
+        logger.error('AideService', `Erreur récupération étapes paddle (status ${response.status})`);
         throw new Error('Impossible de récupérer les étapes');
     }
-    const data: PratiqueEtape[] = await response.json();
 
-    return data;
-} 
-export async function getObligations(): Promise<obligations[]>{
-    const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
-    if(!token){
-        throw new Error ('Aucun token dispo');
-    }
-    const url = `${API_BASE_URL}${ROUTES.AIDE_REGLES}`;
+    return await response.json();
+}
 
-    const response = await fetch(url, {
+//Récupère les obligations / règles.
+export async function getObligations(): Promise<obligations[]> {
+    const response = await fetchWithAuth(ROUTES.AIDE_REGLES, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
     });
+
     if (!response.ok) {
-        logger.error('AideService', `Erreur récupération étapes (status ${response.status})`);
-        throw new Error('Impossible de récupérer les étapes');
+        logger.error('AideService', `Erreur récupération obligations (status ${response.status})`);
+        throw new Error('Impossible de récupérer les obligations');
     }
-    const data: obligations[] = await response.json();
-    return data;
+
+    return await response.json();
 }

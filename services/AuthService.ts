@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL, ROUTES, STORAGE_KEYS } from '../constants/Config';
 import { LoginRequest, LoginResponse, RegisterRequest, User } from '../types/Auth';
 import { logger } from '../utils/logger';
+import { fetchWithAuth } from './fetchWithAuth';
 
 //Stock l'utilisateur courant 
 let currentUser: User | null = null;
@@ -50,6 +51,19 @@ export async function register(mail: string, password: string, prenom: string, n
 
 //Déconnexion supprime le token et les infos 
 export async function logout(): Promise<void>{
+    const refreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
+    if(refreshToken){
+        try{
+            await fetch(`${API_BASE_URL}${ROUTES.LOGOUT}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json'},
+                body: JSON.stringify({ refreshToken }),
+            });
+        } catch (error) {
+            logger.warn('AuthService', 'Echec révocation refresh token côté serveur', error);
+        }
+    }
+
     await SecureStore.deleteItemAsync(STORAGE_KEYS.JWT_TOKEN);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.USER_ID);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.USER_EMAIL);
@@ -67,11 +81,11 @@ export async function tryRestoreSession(): Promise<boolean>{
     const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
     if(!token) return false;
 
-        try {
-        const response = await fetch (`${API_BASE_URL}${ROUTES.ME}`,{
+    try {
+        // Utilise fetchWithAuth pour bénéficier du refresh automatique
+        const response = await fetchWithAuth(ROUTES.ME, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
         });
@@ -97,7 +111,7 @@ export async function tryRestoreSession(): Promise<boolean>{
         await SecureStore.setItemAsync(STORAGE_KEYS.USER_ROLE, userData.role);
 
         return true;
-    }catch(error){
+    } catch(error){
         logger.error('AuthService', 'Erreur réseau lors de la restauration de session', error);
         await logout();
         return false;
@@ -106,13 +120,14 @@ export async function tryRestoreSession(): Promise<boolean>{
 
 //Stocke la session après un login/register 
 async function persistSession(response: LoginResponse): Promise<void>{
-  await SecureStore.setItemAsync(STORAGE_KEYS.JWT_TOKEN, response.token);
-  await SecureStore.setItemAsync(STORAGE_KEYS.USER_ID, response.userId.toString());
+  await SecureStore.setItemAsync(STORAGE_KEYS.JWT_TOKEN, response.accessToken);
+  await SecureStore.setItemAsync(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
+  await SecureStore.setItemAsync(STORAGE_KEYS.USER_ID, response.idUtilisateur.toString());
   await SecureStore.setItemAsync(STORAGE_KEYS.USER_EMAIL, response.mail);
   await SecureStore.setItemAsync(STORAGE_KEYS.USER_ROLE, response.role);
 
   currentUser = {
-    id: response.userId,
+    id: response.idUtilisateur,
     mail: response.mail,
     prenom: response.prenom,
     nom: response.nom,

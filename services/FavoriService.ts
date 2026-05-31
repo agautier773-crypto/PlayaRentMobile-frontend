@@ -1,53 +1,46 @@
-import * as SecureStore from 'expo-secure-store';
-import { API_BASE_URL, STORAGE_KEYS } from '../constants/Config';
+import { fetchWithAuth } from './fetchWithAuth';
+import { ROUTES } from '../constants/Config';
 import { Station } from '../types/Stations';
 import { logger } from '../utils/logger';
 
+//Récupère les stations favorites de l'utilisateur connecté.
 export async function getFavoris(): Promise<Station[]> {
-    const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
-    if(!token) throw new Error ('Aucun token dispo');
-
-    const response = await fetch (`${API_BASE_URL}/favoris`, {
-        method: 'GET', 
+    const response = await fetchWithAuth('/favoris', {
+        method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
     });
-    if (!response.ok){
-        throw new Error (`Erreur récupération favoris (status ${response.status})`);
+
+    if (!response.ok) {
+        throw new Error(`Erreur récupération favoris (status ${response.status})`);
     }
+
     return await response.json();
 }
 
-export async function addFavori(idStation: string): Promise<void>{
-    const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
-    if(!token) throw new Error('Aucun token dispo');
-
-    const response = await fetch(`${API_BASE_URL}/favoris/${idStation}`, {
+// Ajoute une station aux favoris.
+export async function ajouterFavori(idStation: string): Promise<void> {
+    const response = await fetchWithAuth(`/favoris/${idStation}`, {
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
     });
-    if (!response.ok){
-        throw new Error (`Erreur ajout favori (status ${response.status})`);
+
+    if (!response.ok) {
+        throw new Error(`Erreur ajout favori (status ${response.status})`);
     }
+
+    logger.info('FavoriService', `Station ${idStation} ajoutée aux favoris`);
 }
 
-export async function removeFavori(idStation: string): Promise<void> {
-  const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
-  if (!token) throw new Error('Aucun token disponible');
+ //Retire une station des favoris.
+export async function retirerFavori(idStation: string): Promise<void> {
+    const response = await fetchWithAuth(`/favoris/${idStation}`, {
+        method: 'DELETE',
+    });
 
-  const response = await fetch(`${API_BASE_URL}/favoris/${idStation}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
+    if (!response.ok) {
+        throw new Error(`Erreur retrait favori (status ${response.status})`);
+    }
 
-  if (!response.ok) {
-    throw new Error(`Erreur retrait favori (status ${response.status})`);
-  }
-  
+    logger.info('FavoriService', `Station ${idStation} retirée des favoris`);
 }

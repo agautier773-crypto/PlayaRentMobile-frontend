@@ -3,6 +3,7 @@ import { ActivityIndicator, View } from 'react-native';
 import * as AuthService from '../services/AuthService';
 import { User } from '../types/Auth';
 import { Colors } from '../constants/Colors';
+import { setOnSessionExpired } from '../services/fetchWithAuth';
 
 //Définition de la base du context
 type AuthContextType = {
@@ -33,6 +34,14 @@ export function AuthProvider({ children }: Props){
             setIsLoading(false);
         })();
     }, []);
+
+    // Enregistre le callback de déconnexion forcée
+// Si le refresh token expire vraiment, fetchWithAuth notifie pour basculer sur Login
+useEffect(() => {
+    setOnSessionExpired(() => {
+        setUser(null);
+    });
+}, []);
 
     //Wrapper qui appellent AuthService et met à jour les states 
     const login = async (mail: string, password: string) => {

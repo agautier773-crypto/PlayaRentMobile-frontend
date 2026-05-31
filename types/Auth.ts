@@ -15,8 +15,9 @@ export type RegisterRequest = {
 
 //Reponse du back apres login/register
 export type LoginResponse = {
-    token: string;
-    userId: number; 
+    accessToken: string;
+    refreshToken: string;
+    idUtilisateur: number; 
     mail: string;
     prenom: string;
     nom: string;

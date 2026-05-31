@@ -1,40 +1,27 @@
-import * as SecureStore from 'expo-secure-store';
-import { API_BASE_URL, ROUTES, STORAGE_KEYS } from '../constants/Config';
+import { fetchWithAuth } from './fetchWithAuth';
+import { ROUTES } from '../constants/Config';
 import { Station } from '../types/Stations';
 import { logger } from '../utils/logger';
 
 export async function getAllStations(): Promise<Station[]>{
-    // Récupère le token en session
-    const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
-    if(!token){
-        throw new Error('Aucun token disponible');
-    }
-    const response = await fetch (`${API_BASE_URL}${ROUTES.STATIONS}`, {
+    const response = await fetchWithAuth(ROUTES.STATIONS, {
         method: 'GET',
-        headers:{
-            'Authorization': `Bearer ${token}`,
+        headers: {
             'Content-Type': 'application/json',
         },
     });
+    
     if (!response.ok) {
         logger.error('StationService', `Erreur récupération stations (status ${response.status})`);
         throw new Error('Impossible de récupérer les stations');
     }
-    const data: Station[] = await response.json();
-    
-    return data;
+    return await response.json();
 }
 
 export async function getStationById(id: string): Promise<Station>{
-    const token = await SecureStore.getItemAsync(STORAGE_KEYS.JWT_TOKEN);
-    if(!token) throw new Error('Aucun token dispo');
-
-    const url = `${API_BASE_URL}${ROUTES.STATIONS}/${id}`;
-
-    const response = await fetch(url, {
+    const response = await fetchWithAuth(`${ROUTES.STATIONS}/${id}`, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
     });
@@ -43,7 +30,7 @@ export async function getStationById(id: string): Promise<Station>{
         if(response.status === 404){
             throw new Error('Station introuvable');
         }
-        throw new Error ('Erreur récupération station (status ${response.status})');
+        throw new Error(`Erreur récupération station (status ${response.status})`);
     }
 
     const data: Station = await response.json();

@@ -28,6 +28,7 @@ import StationDetailSheet, { StationDetailSheetRef } from '../components/Station
 import { useFocusEffect } from '@react-navigation/native';
 
 
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Centre initial : Pornic
@@ -177,16 +178,14 @@ export default function HomeScreen() {
       </body>
     </html>
   `;
-  const handleLogout = () => {
-    Alert.alert(
-      'Déconnexion',
-      'Es-tu sûr de vouloir te déconnecter ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Se déconnecter', style: 'destructive', onPress: async () => await logout() },
-      ]
-    );
-  };
+const handleLogout = async () => {
+    try {
+        await logout();
+        
+    } catch (error) {
+        logger.error('HomeScreen', 'Erreur déconnexion', error);
+    }
+};
 
   const handleRecenter = () => {
     const script = `window.recenterMap(${INITIAL_LAT}, ${INITIAL_LNG}, ${INITIAL_ZOOM}); true;`;
@@ -219,6 +218,7 @@ export default function HomeScreen() {
   };
 
   return (
+    
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* HEADER BLEU */}
 {/* HEADER BLEU */}
@@ -230,6 +230,14 @@ export default function HomeScreen() {
           resizeMode="contain"
         />
       </View>
+      <TouchableOpacity 
+        style={styles.navItem} 
+        activeOpacity={0.7}
+        onPress={handleLogout}
+        >
+        <Text style={styles.navIcon}>⎋</Text>
+        <Text style={styles.navLabel}>Quitter</Text>
+    </TouchableOpacity>
 
       <TouchableOpacity 
         style={styles.navItem} 
@@ -319,6 +327,24 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
         <StationDetailSheet ref={stationSheetRef} />
+            <TouchableOpacity 
+        style={{
+            position: 'absolute',
+            bottom: 100,
+            right: 20,
+            backgroundColor: 'red',
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            borderRadius: 24,
+            zIndex: 9999,
+            elevation: 10,
+        }}
+        onPress={handleLogout}
+    >
+        <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>
+            DÉCONNEXION
+        </Text>
+    </TouchableOpacity>
     </SafeAreaView>
   );
 }

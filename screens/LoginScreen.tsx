@@ -52,7 +52,7 @@ export default function LoginScreen({ navigation }: Props) {
         value={email}
         onChangeText={setEmail}
         placeholder="email@exemple.com"
-        placeholderTextColor="#999"
+        placeholderTextColor="#000000"
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
@@ -64,7 +64,7 @@ export default function LoginScreen({ navigation }: Props) {
         value={password}
         onChangeText={setPassword}
         placeholder="••••••••"
-        placeholderTextColor="#999"
+        placeholderTextColor="#000000"
         secureTextEntry
       />
 
@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   input: {
+    color: '#000000',
     borderWidth: 0,
     borderRadius: 12,
     paddingHorizontal: 16,

@@ -85,7 +85,7 @@ export default function RegisterScreen({ navigation }: Props) {
             value={nom}
             onChangeText={setNom}
             placeholder="Nom"
-            placeholderTextColor="#999"
+            placeholderTextColor="#000000"
             autoCapitalize="words"
           />
           {showValidation && !validation.nomValid && (
@@ -99,7 +99,7 @@ export default function RegisterScreen({ navigation }: Props) {
             value={prenom}
             onChangeText={setPrenom}
             placeholder="Prénom"
-            placeholderTextColor="#999"
+            placeholderTextColor="#000000"
             autoCapitalize="words"
           />
           {showValidation && !validation.prenomValid && (
@@ -126,11 +126,11 @@ export default function RegisterScreen({ navigation }: Props) {
       {/* Mot de passe avec œil */}
       <View style={styles.passwordContainer}>
         <TextInput
-          style={styles.passwordInput}
+          style={[styles.passwordInput, {color:'#000000'}]}
           value={password}
           onChangeText={setPassword}
           placeholder="Mot de passe"
-          placeholderTextColor="#999"
+          placeholderTextColor="#000000"
           secureTextEntry={!showPassword}
         />
         <TouchableOpacity
@@ -158,7 +158,7 @@ export default function RegisterScreen({ navigation }: Props) {
           value={passwordConfirm}
           onChangeText={setPasswordConfirm}
           placeholder="Confirmer le mot de passe"
-          placeholderTextColor="#999"
+          placeholderTextColor="#000000"
           secureTextEntry={!showPasswordConfirm}
         />
         <TouchableOpacity
@@ -248,6 +248,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   input: {
+    color: '#000000',
     borderWidth: 0,
     borderRadius: 12,
     paddingHorizontal: 16,
@@ -329,7 +330,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.PlayaBlue,
   },
   checkmark: {
-    color: '#FFFFFF',
+    color: '#000000',
     fontWeight: 'bold',
     fontSize: 12,
   },
