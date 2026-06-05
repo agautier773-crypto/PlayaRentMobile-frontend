@@ -17,6 +17,7 @@ import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { logger } from '../utils/logger';
 import BlueHeader from '../components/HeaderBlue';
+import { RootStackParamList } from '../navigation/AppNavigation';
 
 export default function FavorisScreen() {
   const navigation = useNavigation();
@@ -63,7 +64,7 @@ export default function FavorisScreen() {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <BlueHeader title="Mes Favoris" showBackButton showLogo />
+      <BlueHeader title="Mes Favoris" showLogo showLogout />
 
       {/* Contenu */}
       {loading ? (
@@ -118,9 +119,20 @@ export default function FavorisScreen() {
                 <Ionicons name="heart" size={26} color={Colors.PlayaOrange} />
               </TouchableOpacity>
             </View>
+            
           )}
         />
       )}
+            <View style={styles.bottomNav}>
+              <TouchableOpacity
+                style={styles.navItem}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('Home')}
+              >
+                <Text style={styles.navIcon}>⌂</Text>
+                <Text style={[styles.navLabel, styles.navLabelActive]}>Accueil</Text>
+              </TouchableOpacity>
+            </View>
     </View>
   );
 }
@@ -235,5 +247,31 @@ const styles = StyleSheet.create({
   },
   heartButton: {
     padding: 8,
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: Colors.PlayaYellow,
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    paddingBottom: 30,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  navItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  navIcon: {
+    fontSize: 24,
+    color: Colors.PlayaBlue,
+    marginBottom: 4,
+  },
+  navLabel: {
+    fontSize: 13,
+    color: Colors.PlayaBlue,
+    fontFamily: Fonts.bold,
+  },
+  navLabelActive: {
+    textDecorationLine: 'underline',
   },
 });

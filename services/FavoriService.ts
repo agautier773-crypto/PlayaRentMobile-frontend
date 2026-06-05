@@ -20,7 +20,7 @@ export async function getFavoris(): Promise<Station[]> {
 }
 
 // Ajoute une station aux favoris.
-export async function ajouterFavori(idStation: string): Promise<void> {
+export async function addFavori(idStation: string): Promise<void> {
     const response = await fetchWithAuth(`/favoris/${idStation}`, {
         method: 'POST',
     });
@@ -33,7 +33,7 @@ export async function ajouterFavori(idStation: string): Promise<void> {
 }
 
  //Retire une station des favoris.
-export async function retirerFavori(idStation: string): Promise<void> {
+export async function removeFavori(idStation: string): Promise<void> {
     const response = await fetchWithAuth(`/favoris/${idStation}`, {
         method: 'DELETE',
     });
@@ -43,4 +43,17 @@ export async function retirerFavori(idStation: string): Promise<void> {
     }
 
     logger.info('FavoriService', `Station ${idStation} retirée des favoris`);
+}
+//Vérifie si une station est en favori
+export async function existeFavori(idStation: string): Promise<boolean> {
+    const response = await fetchWithAuth(`/favoris/${idStation}/exists`, {
+        method: 'GET',
+    });
+
+    if (!response.ok) {
+        throw new Error(`Erreur vérification favori (status ${response.status})`);
+    }
+
+    const data = await response.json();
+    return data.exists;
 }

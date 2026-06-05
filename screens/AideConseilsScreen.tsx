@@ -150,7 +150,7 @@ const renderPratiqueEtape = ({ item }: { item: PratiqueEtape }) => {
   return (
     <View style={styles.container}>
       {/* HEADER BLEU */}
-      <BlueHeader title="Aide & Conseils" showBackButton showLogo />
+      <BlueHeader title="Aide & Conseils" showLogo showLogout />
       
       {/* TABS */}
       <View style={styles.tabsContainer}>
@@ -323,11 +323,6 @@ const renderPratiqueEtape = ({ item }: { item: PratiqueEtape }) => {
 
       {/* BOTTOM NAV */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
-          <Text style={styles.navIcon}>♡</Text>
-          <Text style={styles.navLabel}>Favoris</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity
           style={styles.navItem}
           activeOpacity={0.7}

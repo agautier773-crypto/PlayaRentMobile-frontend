@@ -24,9 +24,9 @@ import { PLAYA_LOGO_SVG } from '../constants/Logos';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigation';
 import { useNavigation } from '@react-navigation/native';
-import StationDetailSheet, { StationDetailSheetRef } from '../components/StationDetailSheet';
+import StationDetailSheet, { StationDetailSheetRef } from './StationDetailSheet';
 import { useFocusEffect } from '@react-navigation/native';
-
+import BlueHeader from '../components/HeaderBlue';
 
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -220,58 +220,8 @@ const handleLogout = async () => {
   return (
     
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* HEADER BLEU */}
-{/* HEADER BLEU */}
-    <View style={styles.header}>
-      <View style={styles.logoContainer}>
-        <Image
-          source={require('../assets/logo_playarent.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
-      <TouchableOpacity 
-        style={styles.navItem} 
-        activeOpacity={0.7}
-        onPress={handleLogout}
-        >
-        <Text style={styles.navIcon}>⎋</Text>
-        <Text style={styles.navLabel}>Quitter</Text>
-    </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.navItem} 
-        activeOpacity={0.7}
-        onPress={() => logger.info('HomeScreen', 'Clic sur FAVORIS')}
-      >
-        <Text style={styles.navIcon}>♡</Text>
-        <Text style={styles.navLabel}>Favoris</Text>
-      </TouchableOpacity>
-        <TouchableOpacity 
-        style={styles.navItem} 
-        activeOpacity={0.7}
-        onPress={() => {
-          alert('clic');
-          navigation.navigate('AideConseils')}}
-      >
-        <Text style={styles.navIcon}>?</Text>
-        <Text style={styles.navLabel}>Conseils</Text>
-      </TouchableOpacity>
-    </View>
-
-      {/* VAGUE */}
-      <Svg
-        width={SCREEN_WIDTH}
-        height={30}
-        viewBox={`0 0 ${SCREEN_WIDTH} 30`}
-        style={styles.wave}
-      >
-        <Path
-          d={`M0,0 Q${SCREEN_WIDTH * 0.25},30 ${SCREEN_WIDTH * 0.5},15 T${SCREEN_WIDTH},10 L${SCREEN_WIDTH},0 Z`}
-          fill={Colors.PlayaBlue}
-        />
-      </Svg>
-
+        <BlueHeader title="" showLogo showLogout compact />
       {/* CARTE LEAFLET dans WEBVIEW */}
       <View style={styles.mapContainer}>
         <WebView
@@ -327,24 +277,6 @@ const handleLogout = async () => {
         </TouchableOpacity>
       </View>
         <StationDetailSheet ref={stationSheetRef} />
-            <TouchableOpacity 
-        style={{
-            position: 'absolute',
-            bottom: 100,
-            right: 20,
-            backgroundColor: 'red',
-            paddingVertical: 12,
-            paddingHorizontal: 20,
-            borderRadius: 24,
-            zIndex: 9999,
-            elevation: 10,
-        }}
-        onPress={handleLogout}
-    >
-        <Text style={{ color: '#FFFFFF', fontWeight: 'bold' }}>
-            DÉCONNEXION
-        </Text>
-    </TouchableOpacity>
     </SafeAreaView>
   );
 }

@@ -15,8 +15,13 @@ import { Fonts } from '../constants/Fonts';
 import { logger } from '../utils/logger';
 import { getPhotosByStation } from '../services/PhotoService';
 import { Photo } from '../types/Photo';
-import { addFavori, removeFavori, getFavoris } from '../services/FavoriService';
+import { addFavori, removeFavori, existeFavori } from '../services/FavoriService';
 import { Ionicons } from '@expo/vector-icons';
+import EquipementsList from '../components/EquipementList';
+import { getEquipementsByStation } from '../services/EquipementService';
+import { Equipement } from '../types/Equipement';
+import { useNavigation } from '@react-navigation/native';
+
 
 export type StationDetailSheetRef = {
   open: (stationId: string) => void;
@@ -25,6 +30,7 @@ export type StationDetailSheetRef = {
 
 const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const navigation = useNavigation<any>();
   const [station, setStation] = useState<Station | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +40,8 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
   const [favoriLoading, setFavoriLoading] = useState(false);
   // Points d'arrêt du sheet : 35% (preview) et 80% (étendu)
   const snapPoints = useMemo(() => ['35%', '80%'], []);
+  const [equipements, setEquipements] = useState<Equipement[]>([]);
+  const [equipementsLoading, setEquipementsLoading] = useState(false);
 
   // Expose des méthodes au parent (HomeScreen)
   useImperativeHandle(ref, () => ({
@@ -52,12 +60,14 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
     setError(null);
     setStation(null);
     setPhotos([]);
+    setEquipements([]);
     setIsFavori(false);
     try {
       const data = await getStationById(stationId);
       setStation(data);
       loadPhotos(stationId);
-      checkFavoriStatus(stationId);
+      loadEquipements(stationId);
+      checkFavoriStatus();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue';
       setError(message);
@@ -78,17 +88,32 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
     setLoadingPhotos(false);
   }
 };
+
+const loadEquipements = async (stationId: string) => {
+    setEquipementsLoading(true);
+    try {
+        const data = await getEquipementsByStation(stationId);
+        setEquipements(data);
+    } catch (err) {
+        logger.error('StationDetailSheet', 'Erreur chargement équipements', err);
+        setEquipements([]);
+    } finally {
+        setEquipementsLoading(false);
+    }
+};
 // Vérifie si la station est en favori
-const checkFavoriStatus = async (stationId: string) => {
+const checkFavoriStatus = async () => {
+  if(!station) return;
   try {
-    const favoris = await getFavoris();
-    const estFavori = favoris.some((s) => s.id === stationId);
-    setIsFavori(estFavori);
+    const isFavori = await existeFavori(station.id);
+    setIsFavori(isFavori);
   } catch (err) {
     logger.error('StationDetailSheet', 'Erreur vérification favori', err);
   }
 };
+
 const toggleFavori = async () => {
+
   if (!station || favoriLoading) return;
   
   setFavoriLoading(true);
@@ -171,6 +196,10 @@ const toggleFavori = async () => {
               <Text style={styles.infoValueSmall}>
                 {station.latitude.toFixed(6)}, {station.longitude.toFixed(6)}
               </Text>
+                  <EquipementsList
+                      equipements={equipements}
+                      loading={equipementsLoading}
+                  />
             </View>
                     {/* Section Photos */}
                     {photos.length > 0 && (
@@ -209,10 +238,15 @@ const toggleFavori = async () => {
                 station.etat !== 'OUVERTE' && styles.mainActionDisabled,
               ]}
               disabled={station.etat !== 'OUVERTE'}
+              onPress={() => {
+                    bottomSheetRef.current?.close();
+                    setStation(null)
+                    navigation.navigate('ScanRide');
+                  }}
             >
               <Text style={styles.mainActionText}>
                 {station.etat === 'OUVERTE'
-                  ? ' Louer maintenant'
+                  ? ' Scan&ride'
                   : 'Station indisponible'}
               </Text>
             </TouchableOpacity>

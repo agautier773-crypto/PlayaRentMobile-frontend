@@ -1,22 +1,47 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Dimensions, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
+import { useAuth } from '../context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 type Props = {
-  title: string;              // le titre affiché
-  showBackButton?: boolean;   // afficher la flèche retour ? (défaut: false)
-  showLogo?: boolean;         // afficher le logo ? (défaut: false)
+  title: string;              
+  showBackButton?: boolean;   
+  showLogo?: boolean;
+  showLogout?: boolean;  
+  compact?: boolean;        
 };
 
-export default function BlueHeader({ title, showBackButton = false, showLogo = false }: Props) {
+export default function BlueHeader({ title, showBackButton = false, showLogo = false, showLogout = false, compact = false, }: Props) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const { logout } = useAuth();
+
+    const handleLogout = () => {
+    Alert.alert(
+      'Déconnexion',
+      'Voulez-vous vraiment vous déconnecter ?',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Se déconnecter',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+          },
+        },
+      ]
+    );
+  };
 
 return (
   <View style={styles.wrapper}>
@@ -29,19 +54,31 @@ return (
         >
           <Text style={styles.backText}>← Retour</Text>
         </TouchableOpacity>
+        )}
+
+        {showLogout && (
+          <TouchableOpacity
+            onPress={handleLogout}
+            style={[styles.logoutButton, { top: insets.top + 12 }]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="log-out-outline" size={26} color="#FFFFFF" />
+          </TouchableOpacity>
       )}
 
-      {/* Logo centré en haut */}
       {showLogo && (
         <Image
           source={require('../assets/logo_playarent.png')}
-          style={styles.logo}
+          style={compact ? styles.logoCompact : styles.logo}
           resizeMode="contain"
         />
       )}
 
-      {/* Titre centré en dessous */}
-      <Text style={styles.headerTitle}>{title}</Text>
+      {title ? (
+        <Text style={compact ? styles.headerTitleCompact : styles.headerTitle}>
+          {title}
+        </Text>
+      ) : null}
     </View>
 
     {/* Vague */}
@@ -79,7 +116,7 @@ backText: {
 },
 logo: {
   width: 120,
-  height: 120,
+  height: 100,
   marginBottom: -10,
 },
 headerTitle: {
@@ -94,5 +131,24 @@ wave: {
 wrapper: {
   zIndex: 10,
   elevation: 10,
+},
+logoutButton: {
+  position: 'absolute',
+  right: 16,
+  zIndex: 10,
+  padding: 4,
+},
+
+logoCompact: {
+  width: 100,
+  height: 120,
+  marginTop: -75,
+  marginBottom: -60,
+},
+headerTitleCompact: {
+  color: '#FFFFFF',
+  fontSize: 20,
+  fontFamily: Fonts.bold,
+  textAlign: 'center',
 },
 });
