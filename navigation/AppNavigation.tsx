@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import AideConseilsScreen from '../screens/AideConseilsScreen';
 import ScanRideScreen from '../screens/ScanRideScreen';
 import FavorisScreen from '../screens/FavorisScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 export type RootStackParamList = {
     Login: undefined;
@@ -18,6 +19,7 @@ export type RootStackParamList = {
     StationDetail: { stationId: string };
     ScanRide: undefined;
     Favoris: undefined;
+    Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -44,6 +46,11 @@ export default function AppNavigator(){
                 <Stack.Screen
                     name="Favoris"
                     component={FavorisScreen}
+                    options={{ headerShown: false }}
+                    />
+                <Stack.Screen 
+                    name="Profile" 
+                    component={ProfileScreen} 
                     options={{ headerShown: false }}
                     />
                 </>

@@ -14,11 +14,12 @@ type Props = {
   title: string;              
   showBackButton?: boolean;   
   showLogo?: boolean;
-  showLogout?: boolean;  
+  showLogout?: boolean;
+  showProfile?: boolean;  
   compact?: boolean;        
 };
 
-export default function BlueHeader({ title, showBackButton = false, showLogo = false, showLogout = false, compact = false, }: Props) {
+export default function BlueHeader({ title, showBackButton = false, showLogo = false, showLogout = false, compact = false, showProfile = false }: Props) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { logout } = useAuth();
@@ -53,6 +54,15 @@ return (
           style={[styles.backButton, { top: insets.top + 12 }]}
         >
           <Text style={styles.backText}>← Retour</Text>
+        </TouchableOpacity>
+        )}
+        {showProfile && (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Profile' as never)}
+          style={[styles.profileButton, { top: insets.top + 12 }]}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="person-circle-outline" size={28} color="#FFFFFF" />
         </TouchableOpacity>
         )}
 
@@ -150,5 +160,11 @@ headerTitleCompact: {
   fontSize: 20,
   fontFamily: Fonts.bold,
   textAlign: 'center',
+},
+profileButton: {
+  position: 'absolute',
+  left: 16,
+  zIndex: 10,
+  padding: 4,
 },
 });

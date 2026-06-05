@@ -18,6 +18,7 @@ import { Fonts } from '../constants/Fonts';
 import { logger } from '../utils/logger';
 import BlueHeader from '../components/HeaderBlue';
 import { RootStackParamList } from '../navigation/AppNavigation';
+import BottomNav from '../components/BottomNav';
 
 export default function FavorisScreen() {
   const navigation = useNavigation();
@@ -64,7 +65,7 @@ export default function FavorisScreen() {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <BlueHeader title="Mes Favoris" showLogo showLogout />
+      <BlueHeader title="Mes Favoris" showProfile showLogo showLogout />
 
       {/* Contenu */}
       {loading ? (
@@ -123,20 +124,10 @@ export default function FavorisScreen() {
           )}
         />
       )}
-            <View style={styles.bottomNav}>
-              <TouchableOpacity
-                style={styles.navItem}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('Home')}
-              >
-                <Text style={styles.navIcon}>⌂</Text>
-                <Text style={[styles.navLabel, styles.navLabelActive]}>Accueil</Text>
-              </TouchableOpacity>
-            </View>
+      <BottomNav />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
