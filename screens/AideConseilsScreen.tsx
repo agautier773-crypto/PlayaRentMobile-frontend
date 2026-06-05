@@ -24,7 +24,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getConseilImage } from '../constants/Images';
 import BlueHeader from '../components/HeaderBlue';
-
+import BottomNav from '../components/BottomNav';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AideConseils'>;
 type Tab = 'LOUER' | 'SUR_LEAU' | 'REGLES';
@@ -150,7 +150,7 @@ const renderPratiqueEtape = ({ item }: { item: PratiqueEtape }) => {
   return (
     <View style={styles.container}>
       {/* HEADER BLEU */}
-      <BlueHeader title="Aide & Conseils" showLogo showLogout />
+      <BlueHeader title="Aide & Conseils" showProfile showLogo showLogout />
       
       {/* TABS */}
       <View style={styles.tabsContainer}>
@@ -322,16 +322,7 @@ const renderPratiqueEtape = ({ item }: { item: PratiqueEtape }) => {
     </View>
 
       {/* BOTTOM NAV */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navItem}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <Text style={styles.navIcon}>⌂</Text>
-          <Text style={[styles.navLabel, styles.navLabelActive]}>Accueil</Text>
-        </TouchableOpacity>
-      </View>
+    <BottomNav />
     </View>
   );
 }

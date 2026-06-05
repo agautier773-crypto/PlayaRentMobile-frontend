@@ -27,6 +27,8 @@ import { useNavigation } from '@react-navigation/native';
 import StationDetailSheet, { StationDetailSheetRef } from './StationDetailSheet';
 import { useFocusEffect } from '@react-navigation/native';
 import BlueHeader from '../components/HeaderBlue';
+import BottomNav from '../components/BottomNav';
+import { Ionicons } from '@expo/vector-icons';
 
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -218,10 +220,8 @@ const handleLogout = async () => {
   };
 
   return (
-    
     <SafeAreaView style={styles.container} edges={['top']}>
-
-        <BlueHeader title="" showLogo showLogout compact />
+        <BlueHeader title="" showProfile showLogo showLogout compact />
       {/* CARTE LEAFLET dans WEBVIEW */}
       <View style={styles.mapContainer}>
         <WebView
@@ -236,7 +236,6 @@ const handleLogout = async () => {
           showsHorizontalScrollIndicator={false}
           onMessage={handleWebViewMessage}
         />
-
         {/* Bouton burger menu */}
         <TouchableOpacity onPress={handleMenuPress} style={styles.menuButton} activeOpacity={0.8}>
           <View style={styles.menuLine} />
@@ -246,37 +245,13 @@ const handleLogout = async () => {
 
         {/* Bouton recentrer */}
         <TouchableOpacity onPress={handleRecenter} style={styles.recenterButton} activeOpacity={0.8}>
-          <Text style={styles.recenterIcon}>⊕</Text>
+            <Ionicons name="locate-outline" size={26} color={Colors.PlayaBlue} />
         </TouchableOpacity>
       </View>
 
       {/* BOTTOM NAV JAUNE */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity 
-          style={styles.navItem} 
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Favoris')}
-        >
-          <Text style={styles.navIcon}>♡</Text>
-          <Text style={styles.navLabel}>Favoris</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}
-          onPress={() => navigation.navigate('ScanRide')}>
-          <Text style={[styles.navIcon, { color: Colors.PlayaOrange }]}>⊡</Text>
-          <Text style={[styles.navLabel, { color: Colors.PlayaOrange }]}>Scan&ride</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity   
-        style={styles.navItem} 
-        activeOpacity={0.7}
-        onPress={() => navigation.navigate('AideConseils')}
->
-          <Text style={styles.navIcon}>?</Text>
-          <Text style={styles.navLabel}>Conseils</Text>
-        </TouchableOpacity>
-      </View>
-        <StationDetailSheet ref={stationSheetRef} />
+      <BottomNav />
+      <StationDetailSheet ref={stationSheetRef} />
     </SafeAreaView>
   );
 }
@@ -304,7 +279,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
     flex: 1,
-  
   },
   logo: {
     width: 150,
