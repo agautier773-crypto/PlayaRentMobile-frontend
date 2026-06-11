@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Alert,
 } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetScrollView  } from '@gorhom/bottom-sheet';
 import { getStationById } from '../services/StationService';
@@ -21,6 +22,7 @@ import EquipementsList from '../components/EquipementList';
 import { getEquipementsByStation } from '../services/EquipementService';
 import { Equipement } from '../types/Equipement';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext';
 
 
 export type StationDetailSheetRef = {
@@ -42,6 +44,7 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
   const snapPoints = useMemo(() => ['35%', '80%'], []);
   const [equipements, setEquipements] = useState<Equipement[]>([]);
   const [equipementsLoading, setEquipementsLoading] = useState(false);
+  const {isGuest, logout } = useAuth();
 
   // Expose des méthodes au parent (HomeScreen)
   useImperativeHandle(ref, () => ({
@@ -115,7 +118,18 @@ const checkFavoriStatus = async () => {
 const toggleFavori = async () => {
 
   if (!station || favoriLoading) return;
-  
+      if (isGuest) {
+        Alert.alert(
+            'Connexion requise',
+            'Créez un compte pour ajouter cette station à vos favoris.',
+            [
+                { text: 'Plus tard', style: 'cancel' },
+                { text: 'Créer un compte', onPress: () => logout() },
+            ]
+        );
+        return;
+    }
+
   setFavoriLoading(true);
   try {
     if (isFavori) {
@@ -136,7 +150,7 @@ const toggleFavori = async () => {
   return (
     <BottomSheet
       ref={bottomSheetRef}
-      index={-1}                    // fermé par défaut
+      index={-1}                    
       snapPoints={snapPoints}
       enablePanDownToClose
       enableContentPanningGesture

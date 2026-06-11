@@ -22,7 +22,7 @@ type Props = {
 export default function BlueHeader({ title, showBackButton = false, showLogo = false, showLogout = false, compact = false, showProfile = false }: Props) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { logout } = useAuth();
+  const { logout, isGuest } = useAuth();
 
     const handleLogout = () => {
     Alert.alert(
@@ -57,16 +57,28 @@ return (
         </TouchableOpacity>
         )}
         {showProfile && (
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Profile' as never)}
-          style={[styles.profileButton, { top: insets.top + 12 }]}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="person-circle-outline" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (isGuest) {
+                // Mode invité : retour à LoginScreen via logout()
+                // logout() reset isGuest, ce qui fait basculer AppNavigator sur AuthStack
+                logout();
+              } else {
+                navigation.navigate('Profile' as never);
+              }
+            }}
+            style={[styles.profileButton, { top: insets.top + 12 }]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons
+              name={isGuest ? 'log-in-outline' : 'person-circle-outline'}
+              size={28}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
         )}
 
-        {showLogout && (
+        {showLogout && !isGuest && (
           <TouchableOpacity
             onPress={handleLogout}
             style={[styles.logoutButton, { top: insets.top + 12 }]}
