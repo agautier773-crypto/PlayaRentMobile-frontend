@@ -24,17 +24,14 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-type Props = {
-    isLoggedIn: boolean;
-};
 
 export default function AppNavigator(){
-    const {isLoggedIn } = useAuth();
+    const {isLoggedIn, isGuest } = useAuth();
     return (
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false}}>
 
-            {isLoggedIn ? (
+            {(isLoggedIn || isGuest) ? (
                 <>
                 <Stack.Screen name="Home" component={HomeScreen} />
                 <Stack.Screen name="AideConseils" component={AideConseilsScreen} />

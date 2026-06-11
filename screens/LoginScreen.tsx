@@ -12,7 +12,7 @@ import { Fonts } from '../constants/Fonts';
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
-  const { login } = useAuth();
+  const { login, loginAsGuest } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,6 +42,14 @@ export default function LoginScreen({ navigation }: Props) {
       setIsLoading(false);
     }
   };
+
+  const handleGuestLogin = async () => {
+    try {
+      await loginAsGuest();
+    } catch(error){
+      setErrorMessage('Impossible de continuer en tant qu\'invité');
+    }
+  }
 
   return (
     <AuthLayout title="Se connecter"
@@ -87,6 +95,11 @@ export default function LoginScreen({ navigation }: Props) {
           Pas de compte ? <Text style={styles.linkBold}>S'inscrire</Text>
         </Text>
       </TouchableOpacity>
+
+        {/* Lien discret invité — placé après "S'inscrire" */}
+        <TouchableOpacity onPress={handleGuestLogin} style={styles.guestLinkContainer}>
+            <Text style={styles.guestLinkText}>Continuer en tant qu'invité</Text>
+        </TouchableOpacity>
     </AuthLayout>
   );
 }
@@ -137,4 +150,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textDecorationLine: 'underline',
   },
+  guestLinkContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+    padding: 8,
+},
+guestLinkText: {
+    color: '#666',
+    fontSize: 13,
+    textDecorationLine: 'underline',
+},
 });

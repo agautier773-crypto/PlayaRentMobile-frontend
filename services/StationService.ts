@@ -1,10 +1,10 @@
 import { fetchWithAuth } from './fetchWithAuth';
-import { ROUTES } from '../constants/Config';
+import {API_BASE_URL, ROUTES } from '../constants/Config';
 import { Station } from '../types/Stations';
 import { logger } from '../utils/logger';
 
 export async function getAllStations(): Promise<Station[]>{
-    const response = await fetchWithAuth(ROUTES.STATIONS, {
+    const response = await fetch(`${API_BASE_URL}${ROUTES.STATIONS}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -19,7 +19,7 @@ export async function getAllStations(): Promise<Station[]>{
 }
 
 export async function getStationById(id: string): Promise<Station>{
-    const response = await fetchWithAuth(`${ROUTES.STATIONS}/${id}`, {
+    const response = await fetch(`${API_BASE_URL}${ROUTES.STATIONS}/${id}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

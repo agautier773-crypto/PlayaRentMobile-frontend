@@ -1,4 +1,4 @@
-import { fetchWithAuth } from './fetchWithAuth';
+import { API_BASE_URL } from '../constants/Config';
 import { Equipement } from '../types/Equipement';
 import { logger } from '../utils/logger';
 
@@ -6,7 +6,7 @@ import { logger } from '../utils/logger';
  * Récupère les équipements d'une station.
  */
 export async function getEquipementsByStation(idStation: string): Promise<Equipement[]> {
-    const response = await fetchWithAuth(`/stations/${idStation}/equipements`, {
+    const response = await fetch(`${API_BASE_URL}/stations/${idStation}/equipements`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

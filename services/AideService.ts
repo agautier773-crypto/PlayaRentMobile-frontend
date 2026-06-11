@@ -1,11 +1,11 @@
-import { fetchWithAuth } from './fetchWithAuth';
-import { ROUTES } from '../constants/Config';
+
+import { API_BASE_URL, ROUTES } from '../constants/Config';
 import { LocationEtape, PratiqueEtape, obligations } from '../types/Aide';
 import { logger } from '../utils/logger';
 
 //Récupère les étapes de location.
 export async function getEtapesLocation(): Promise<LocationEtape[]> {
-    const response = await fetchWithAuth(ROUTES.AIDE_LOUER, {
+    const response = await fetch(`${API_BASE_URL}${ROUTES.AIDE_LOUER}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -22,7 +22,7 @@ export async function getEtapesLocation(): Promise<LocationEtape[]> {
 
 //Récupère les étapes pour le canoë / kayak.
 export async function getEtapesCanoe(): Promise<PratiqueEtape[]> {
-    const response = await fetchWithAuth(ROUTES.AIDE_CANOE, {
+    const response = await fetch(`${API_BASE_URL}${ROUTES.AIDE_LOUER}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ export async function getEtapesCanoe(): Promise<PratiqueEtape[]> {
 
 // Récupère les étapes pour le paddle.
 export async function getEtapesPaddle(): Promise<PratiqueEtape[]> {
-    const response = await fetchWithAuth(ROUTES.AIDE_PADDLE, {
+    const response = await fetch(`${API_BASE_URL}${ROUTES.AIDE_LOUER}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ export async function getEtapesPaddle(): Promise<PratiqueEtape[]> {
 
 //Récupère les obligations / règles.
 export async function getObligations(): Promise<obligations[]> {
-    const response = await fetchWithAuth(ROUTES.AIDE_REGLES, {
+    const response = await fetch(`${API_BASE_URL}${ROUTES.AIDE_LOUER}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

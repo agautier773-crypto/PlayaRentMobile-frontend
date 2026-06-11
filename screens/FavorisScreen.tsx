@@ -19,10 +19,12 @@ import { logger } from '../utils/logger';
 import BlueHeader from '../components/HeaderBlue';
 import { RootStackParamList } from '../navigation/AppNavigation';
 import BottomNav from '../components/BottomNav';
+import { useAuth } from '../context/AuthContext';
 
 export default function FavorisScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { isGuest, logout } = useAuth();
 
   const [favoris, setFavoris] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,8 +33,12 @@ export default function FavorisScreen() {
   // Recharge à chaque fois qu'on arrive sur l'écran
   useFocusEffect(
     useCallback(() => {
+      if(isGuest){
+        setLoading(false);
+        return;
+      }
       loadFavoris();
-    }, [])
+    }, [isGuest])
   );
 
   const loadFavoris = async () => {
@@ -59,6 +65,36 @@ export default function FavorisScreen() {
       logger.error('FavorisScreen', 'Erreur retrait favori', err);
     }
   };
+
+  const handleCreerCompte = () => {
+    logout();
+  };
+
+if(isGuest) {
+  return (
+          <View style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <BlueHeader title="Mes Favoris" showProfile showLogo />
+
+        <View style={styles.guestContainer}>
+          <Ionicons name="heart-outline" size={80} color={Colors.PlayaOrange} />
+          <Text style={styles.guestTitle}>Vos favoris vous attendent</Text>
+          <Text style={styles.guestSubtitle}>
+            Créez un compte pour sauvegarder vos stations préférées et y accéder rapidement.
+          </Text>
+          <TouchableOpacity
+            style={styles.guestButton}
+            onPress={handleCreerCompte}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.guestButtonText}>Créer un compte</Text>
+          </TouchableOpacity>
+        </View>
+
+        <BottomNav />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -265,4 +301,37 @@ const styles = StyleSheet.create({
   navLabelActive: {
     textDecorationLine: 'underline',
   },
+  guestContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingBottom: 60,
+},
+guestTitle: {
+    fontSize: 24,
+    fontFamily: Fonts.bold,
+    color: Colors.PlayaBlue,
+    marginTop: 24,
+    marginBottom: 12,
+    textAlign: 'center',
+},
+guestSubtitle: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
+},
+guestButton: {
+    backgroundColor: Colors.PlayaBlue,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 8,
+},
+guestButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: Fonts.bold,
+},
 });

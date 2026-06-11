@@ -1,10 +1,10 @@
-import { fetchWithAuth } from './fetchWithAuth';
+import { API_BASE_URL } from '../constants/Config';
 import { Photo } from '../types/Photo';
 import { logger } from '../utils/logger';
 
 //Récupère toutes les photos d'une station.
 export async function getPhotosByStation(idStation: string): Promise<Photo[]> {
-    const response = await fetchWithAuth(`/photos/stations/${idStation}`, {
+    const response = await fetch(`${API_BASE_URL}/photos/stations/${idStation}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
