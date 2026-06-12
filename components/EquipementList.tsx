@@ -1,31 +1,32 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator,Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Equipement, TypeEquipement } from '../types/Equipement';
+import { Equipement } from '../types/Equipement';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
-
+import PaddleIcon from '../assets/module-Paddle.png';
+import KayakIcon from '../assets/kayak.png';
+import CanoeIcon from '../assets/canoe.png';
 type Props = {
     equipements: Equipement[];
     loading?: boolean;
 };
 
-// Mapping type → icône Ionicons
-const ICONS: Record<TypeEquipement, keyof typeof Ionicons.glyphMap> = {
-    PADDLE: 'boat-outline',
-    KAYAK: 'boat-outline',
-    CANOE: 'boat-outline',
-};
+/**
+ * Sélectionne l'icône Ionicons selon le type d'équipement.
+ */
+function getIconSource(type: string) {
+    if (!type) return null;
+    const lower = type.toLowerCase();
+    if (lower.includes('paddle')) return PaddleIcon;
+    if (lower.includes('kayak 1 place')) return KayakIcon;
+    if (lower.includes('kayak 2 places')) return CanoeIcon;
+    return null;
+}
 
-// Mapping type → label affiché
-const LABELS: Record<TypeEquipement, string> = {
-    PADDLE: 'Paddle',
-    KAYAK: 'Kayak',
-    CANOE: 'Canoë',
-};
-
- //Formate une date ISO en heure lisible (ex: "14:30")
-
+/**
+ * Formate une date ISO en heure lisible (ex: "14:30")
+ */
 function formatHeure(isoString: string): string {
     try {
         const date = new Date(isoString);
@@ -59,11 +60,19 @@ export default function EquipementsList({ equipements, loading }: Props) {
             <Text style={styles.title}>Équipements</Text>
             {equipements.map((eq) => (
                 <View key={eq.id} style={styles.row}>
-                    {/* Nom + type */}
-                    <View style={styles.infoWrapper}>
-                        <Text style={styles.equipementName}>{eq.nom}</Text>
-                        <Text style={styles.equipementType}>{LABELS[eq.type] || eq.type}</Text>
-                    </View>
+                    {/* Icône */}
+                        {getIconSource(eq.type) && (
+                            <Image
+                                source={getIconSource(eq.type)!}
+                                style={styles.icon}
+                                resizeMode="contain"
+                            />
+                        )}
+
+                        {/* Nom + type — PAS de prix ici */}
+                        <View style={styles.infoWrapper}>
+                            <Text style={styles.equipementType}>{eq.type}</Text>
+                        </View>
 
                     {/* Statut */}
                     <View style={styles.statusWrapper}>
@@ -83,7 +92,7 @@ export default function EquipementsList({ equipements, loading }: Props) {
                                 ? 'Disponible'
                                 : eq.heureRetour
                                 ? `Retour ${formatHeure(eq.heureRetour)}`
-                                : 'Loué'}
+                                : 'Indisponible'}
                         </Text>
                     </View>
                 </View>
@@ -124,15 +133,10 @@ const styles = StyleSheet.create({
     infoWrapper: {
         flex: 1,
     },
-    equipementName: {
+    equipementType: {
         fontSize: 15,
         fontFamily: Fonts.bold,
         color: '#333',
-    },
-    equipementType: {
-        fontSize: 12,
-        color: '#888',
-        marginTop: 2,
     },
     statusWrapper: {
         flexDirection: 'row',
@@ -155,4 +159,15 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         paddingVertical: 16,
     },
+equipementPrice: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 4,
+    lineHeight: 14,
+},
+icon: {
+    width: 32,
+    height: 32,
+    marginRight: 12,
+},
 });

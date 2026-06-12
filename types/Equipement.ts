@@ -1,10 +1,13 @@
-export type TypeEquipement = 'PADDLE' | 'KAYAK' | 'CANOE';
-
 export type Equipement = {
-    id: number;
+    id: string;
     idStation: string;
-    type: TypeEquipement;
+    type: string;
     nom: string;
     disponible: boolean;
-    heureRetour: string | null; 
+    informations?: Informations | null;        
+    heureRetour?: string | null;
+};
+
+export type Informations = {
+    contenu: string;
 };

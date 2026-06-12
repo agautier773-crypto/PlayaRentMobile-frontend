@@ -51,7 +51,11 @@ export default function HomeScreen() {
   const loadStations = async () => {
     try {
       const data = await getAllStations();
-      setStations(data.filter(s => s.estVisible));
+      setStations(data.filter(s => 
+        s.estVisible && 
+        s.latitude != null &&
+        s.longitude != null
+      ));
     }catch (error) {
       logger.error('HomeScreen', 'Erreur chargement stations', error);
     }
@@ -78,6 +82,16 @@ export default function HomeScreen() {
       injectStations(stations);
     }
   }, [mapReady, stations]);
+
+useEffect(() => {
+    const interval = setInterval(() => {
+        logger.info('HomeScreen', 'Auto-refresh stations (60s)');
+        loadStations();
+    }, 60_000);
+
+    // Nettoyage à la sortie du composant (essentiel pour éviter les memory leaks)
+    return () => clearInterval(interval);
+}, []);
 
   // HTML de la carte Leaflet
   const mapHtml = `

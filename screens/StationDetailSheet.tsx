@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   Image,
   Alert,
+  Animated,
+  Easing
 } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetScrollView  } from '@gorhom/bottom-sheet';
 import { getStationById } from '../services/StationService';
@@ -19,7 +21,6 @@ import { Photo } from '../types/Photo';
 import { addFavori, removeFavori, existeFavori } from '../services/FavoriService';
 import { Ionicons } from '@expo/vector-icons';
 import EquipementsList from '../components/EquipementList';
-import { getEquipementsByStation } from '../services/EquipementService';
 import { Equipement } from '../types/Equipement';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
@@ -43,8 +44,8 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
   // Points d'arrêt du sheet : 35% (preview) et 80% (étendu)
   const snapPoints = useMemo(() => ['35%', '80%'], []);
   const [equipements, setEquipements] = useState<Equipement[]>([]);
-  const [equipementsLoading, setEquipementsLoading] = useState(false);
   const {isGuest, logout } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
 
   // Expose des méthodes au parent (HomeScreen)
   useImperativeHandle(ref, () => ({
@@ -58,7 +59,7 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
     },
   }));
 
-  const loadStation = async (stationId: string) => {
+const loadStation = async (stationId: string) => {
     setLoading(true);
     setError(null);
     setStation(null);
@@ -68,9 +69,13 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
     try {
       const data = await getStationById(stationId);
       setStation(data);
+      setEquipements(data.composants || []);
       loadPhotos(stationId);
-      loadEquipements(stationId);
-      checkFavoriStatus();
+      
+      // Favoris uniquement si connecté
+      if (!isGuest) {
+          checkFavoriStatus(stationId);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue';
       setError(message);
@@ -78,7 +83,7 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
     } finally {
       setLoading(false);
     }
-  };
+};
 // fonction de chargement des photos 
   const loadPhotos = async (stationId: string) => {
   setLoadingPhotos(true);
@@ -92,23 +97,10 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
   }
 };
 
-const loadEquipements = async (stationId: string) => {
-    setEquipementsLoading(true);
-    try {
-        const data = await getEquipementsByStation(stationId);
-        setEquipements(data);
-    } catch (err) {
-        logger.error('StationDetailSheet', 'Erreur chargement équipements', err);
-        setEquipements([]);
-    } finally {
-        setEquipementsLoading(false);
-    }
-};
 // Vérifie si la station est en favori
-const checkFavoriStatus = async () => {
-  if(!station) return;
+const checkFavoriStatus = async (stationId: string) => {
   try {
-    const isFavori = await existeFavori(station.id);
+    const isFavori = await existeFavori(stationId);
     setIsFavori(isFavori);
   } catch (err) {
     logger.error('StationDetailSheet', 'Erreur vérification favori', err);
@@ -146,15 +138,57 @@ const toggleFavori = async () => {
   }
 };
 
+const handleRefresh = async () => {
+    if (!station || refreshing) return;
+    setRefreshing(true);
+    try {
+        await loadStation(station.id);
+    } finally {
+        setRefreshing(false);
+    }
+};
 
-  return (
+function getInformationsUniques(composants: Equipement[]): string[] {
+    const set = new Set<string>();
+    composants.forEach((eq) => {
+        if (eq.informations && eq.informations.contenu) {
+            set.add(eq.informations.contenu);
+        }
+    });
+    return Array.from(set);
+}
+
+const rotateAnim = useRef(new Animated.Value(0)).current;
+
+useEffect(() => {
+    if (refreshing) {
+        Animated.loop(
+            Animated.timing(rotateAnim, {
+                toValue: 1,
+                duration: 800,
+                easing: Easing.linear,
+                useNativeDriver: true,
+            })
+        ).start();
+    } else {
+        rotateAnim.stopAnimation();
+        rotateAnim.setValue(0);
+    }
+}, [refreshing]);
+
+const rotate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+});
+
+return (
     <BottomSheet
       ref={bottomSheetRef}
-      index={-1}                    
+      index={-1}
       snapPoints={snapPoints}
       enablePanDownToClose
       enableContentPanningGesture
-      enableHandlePanningGesture         
+      enableHandlePanningGesture
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.handle}
     >
@@ -171,20 +205,41 @@ const toggleFavori = async () => {
           <BottomSheetScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.titleRow}>
               <Text style={styles.stationName}>{station.nom}</Text>
-              <TouchableOpacity 
-                onPress={toggleFavori} 
-                disabled={favoriLoading}
-                activeOpacity={1}
-                style={styles.favoriButton}
+              
+              <View style={styles.titleActions}>
+                {/* Bouton refresh */}
+                <TouchableOpacity
+                  onPress={handleRefresh}
+                  disabled={refreshing}
+                  activeOpacity={0.7}
+                  style={styles.refreshButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Ionicons 
-                      name={isFavori ? 'heart' : 'heart-outline'} 
-                      size={28} 
-                      color={Colors.PlayaOrange} 
+                  <Animated.View style={{ transform: [{ rotate }] }}>
+                    <Ionicons
+                      name="refresh-outline"
+                      size={24}
+                      color={Colors.PlayaBlue}
                     />
-              </TouchableOpacity>
+                  </Animated.View>
+                </TouchableOpacity>
+
+                {/* Bouton favori */}
+                <TouchableOpacity
+                  onPress={toggleFavori}
+                  disabled={favoriLoading}
+                  activeOpacity={1}
+                  style={styles.favoriButton}
+                >
+                  <Ionicons
+                    name={isFavori ? 'heart' : 'heart-outline'}
+                    size={28}
+                    color={Colors.PlayaOrange}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
-            
+
             <View style={styles.badgeContainer}>
               <View
                 style={[
@@ -200,52 +255,53 @@ const toggleFavori = async () => {
               </View>
             </View>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}> Équipements</Text>
-              <Text style={styles.infoValueBig}>{station.nombreComposants}</Text>
-            </View>
+                        {/* Liste des équipements */}
+            <EquipementsList equipements={equipements} />
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Coordonnées</Text>
-              <Text style={styles.infoValueSmall}>
-                {station.latitude.toFixed(6)}, {station.longitude.toFixed(6)}
-              </Text>
-                  <EquipementsList
-                      equipements={equipements}
-                      loading={equipementsLoading}
-                  />
-            </View>
-                    {/* Section Photos */}
-                    {photos.length > 0 && (
-                    <View style={styles.photosSection}>
-                        <Text style={styles.sectionTitle}>Photos</Text>
-                        <View style={styles.photosGrid}>
-                        {photos.map((photo) => (
-                            <View key={photo.idPhoto} style={styles.photoCard}>
-                            <Image
-                                source={{ uri: photo.url }}
-                                style={styles.photoImage}
-                                resizeMode="cover"
-                            />
-                            {photo.titre && (
-                                <Text style={styles.photoTitre} numberOfLines={1}>
-                                {photo.titre}
-                                </Text>
-                            )}
-                            </View>
-                        ))}
-                        </View>
+            {/* Section Informations complémentaires */}
+            {station.composants && station.composants.length > 0 && (
+              <View style={styles.infosSection}>
+                <Text style={styles.sectionTitle}>Informations complémentaires</Text>
+                {getInformationsUniques(station.composants).map((info, idx) => (
+                  <View key={idx} style={styles.infosBloc}>
+                    <Text style={styles.infosContenu}>{info}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Section Photos */}
+            {photos.length > 0 && (
+              <View style={styles.photosSection}>
+                <Text style={styles.sectionTitle}>Photos</Text>
+                <View style={styles.photosGrid}>
+                  {photos.map((photo) => (
+                    <View key={photo.idPhoto} style={styles.photoCard}>
+                      <Image
+                        source={{ uri: photo.url }}
+                        style={styles.photoImage}
+                        resizeMode="cover"
+                      />
+                      {photo.titre && (
+                        <Text style={styles.photoTitre} numberOfLines={1}>
+                          {photo.titre}
+                        </Text>
+                      )}
                     </View>
-                    )}
+                  ))}
+                </View>
+              </View>
+            )}
 
-                    {loadingPhotos && (
-                    <ActivityIndicator size="small" color={Colors.PlayaBlue} style={{ marginVertical: 16 }} />
-                    )}
+            {loadingPhotos && (
+              <ActivityIndicator
+                size="small"
+                color={Colors.PlayaBlue}
+                style={{ marginVertical: 16 }}
+              />
+            )}
 
-                {loadingPhotos && (
-                <ActivityIndicator size="small" color={Colors.PlayaBlue} style={{ marginVertical: 16 }} />
-                )}
-
+            {/* Bouton principal Scan&Ride */}
             <TouchableOpacity
               style={[
                 styles.mainAction,
@@ -253,15 +309,13 @@ const toggleFavori = async () => {
               ]}
               disabled={station.etat !== 'OUVERTE'}
               onPress={() => {
-                    bottomSheetRef.current?.close();
-                    setStation(null)
-                    navigation.navigate('ScanRide');
-                  }}
+                bottomSheetRef.current?.close();
+                setStation(null);
+                navigation.navigate('ScanRide');
+              }}
             >
               <Text style={styles.mainActionText}>
-                {station.etat === 'OUVERTE'
-                  ? ' Scan&ride'
-                  : 'Station indisponible'}
+                {station.etat === 'OUVERTE' ? ' Scan&ride' : 'Station indisponible'}
               </Text>
             </TouchableOpacity>
           </BottomSheetScrollView>
@@ -412,5 +466,45 @@ titleRow: {
 },
 favoriButton: {
   padding: 4,
+},
+tarifsSection: {
+    marginVertical: 16,
+    paddingHorizontal: 4,
+},
+tarifBloc: {
+    backgroundColor: '#F8F8F8',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+},
+tarifDescription: {
+    fontSize: 14,
+    fontFamily: Fonts.bold,
+    color: Colors.PlayaBlue,
+    marginBottom: 8,
+},
+
+infosSection: {
+    marginVertical: 16,
+    paddingHorizontal: 4,
+},
+infosBloc: {
+    backgroundColor: '#F8F8F8',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+},
+infosContenu: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
+},
+titleActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+},
+refreshButton: {
+    padding: 4,
 },
 });
