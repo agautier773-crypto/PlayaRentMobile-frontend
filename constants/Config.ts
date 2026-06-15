@@ -1,9 +1,9 @@
 import { Platform } from 'react-native';
 
 export const API_BASE_URL = Platform.select({
-    android: 'http://192.168.1.175:8080/api',
-  ios: 'http://192.168.1.175:8080/api',
-  default: 'http://192.168.1.174:8080/api',
+    android: 'http://192.168.137.103:8080/api',
+  ios: 'http://192.168.137.103:8080/api',
+  default: 'http://192.168.137.103:8080/api',
 });
 
 export const ROUTES = {

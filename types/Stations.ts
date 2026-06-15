@@ -6,8 +6,8 @@ export type Station = {
     etat: string;
     latitude: number;
     longitude: number;
+    nombreComposantsTotal: number;
     nombreComposantsDisponibles: number;
-    nombreComposants: number;
     typeComposant?: string;
     estVisible: boolean;
     composants: Equipement[];

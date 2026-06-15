@@ -29,6 +29,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import BlueHeader from '../components/HeaderBlue';
 import BottomNav from '../components/BottomNav';
 import { Ionicons } from '@expo/vector-icons';
+import { FiltrerState, FILTRES_VIDES } from '../types/Filtres';
+import { applyFiltres } from '../utils/filtres';
+import FiltrersDrawer from '../components/FiltrersDrawer';
+
 
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -36,7 +40,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Centre initial : Pornic
 const INITIAL_LAT = 47.1153;
 const INITIAL_LNG = -2.1031;
-const INITIAL_ZOOM = 13;
+const INITIAL_ZOOM = 6;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -47,6 +51,10 @@ export default function HomeScreen() {
   const [stations, setStations] = useState<Station[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const stationSheetRef = useRef<StationDetailSheetRef>(null);
+  const [backendDown, setBackendDown] = useState(false);
+  const [filtresVisible, setFiltresVisible] = useState(false);
+  const [filtres, setFiltres] = useState<FiltrerState>(FILTRES_VIDES);
+  
 
   const loadStations = async () => {
     try {
@@ -54,10 +62,12 @@ export default function HomeScreen() {
       setStations(data.filter(s => 
         s.estVisible && 
         s.latitude != null &&
-        s.longitude != null
+        s.longitude != null &&
+        applyFiltres(s, filtres)
       ));
+      setBackendDown(false);
     }catch (error) {
-      logger.error('HomeScreen', 'Erreur chargement stations', error);
+      setBackendDown(true);
     }
   };
   // refresh les markers a chauqe fois que l'ecran devient actif 
@@ -66,6 +76,10 @@ export default function HomeScreen() {
     loadStations();
   }, [])
 );
+
+useEffect(() => {
+    loadStations();
+}, [filtres]);
 
 // On injecte les stations sur la carte 
   const injectStations = (data: Station[]) => {
@@ -87,11 +101,13 @@ useEffect(() => {
     const interval = setInterval(() => {
         logger.info('HomeScreen', 'Auto-refresh stations (60s)');
         loadStations();
-    }, 60_000);
+    },60_000);
 
     // Nettoyage à la sortie du composant (essentiel pour éviter les memory leaks)
     return () => clearInterval(interval);
-}, []);
+}, [filtres]);
+
+
 
   // HTML de la carte Leaflet
   const mapHtml = `
@@ -105,6 +121,100 @@ useEffect(() => {
           html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; }
           body { background: #f0f0f0; }
           .custom-marker { background: transparent !important; border: none !important; }
+                .leaflet-popup-content-wrapper {
+                  border-radius: 12px !important;
+                  padding: 0 !important;
+                  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                }
+
+                .leaflet-popup-content {
+                  margin: 0 !important;
+                  width: auto !important;
+                  min-width: 140px; 
+                }
+
+                .popup-card {
+                  padding: 14px 16px;
+                  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                  min-width: 140px;
+                }
+
+                .popup-title {
+                  font-size: 15px;
+                  font-weight: 700;
+                  color: #1A4D5C;
+                  margin-bottom: 8px;
+                  line-height: 1.2;
+                }
+
+                .popup-badge {
+                  display: inline-block;
+                  padding: 3px 10px;
+                  border-radius: 12px;
+                  font-size: 11px;
+                  font-weight: 700;
+                  margin-bottom: 10px;
+                }
+
+                .popup-badge-open {
+                  background-color: #E8F5E9;
+                  color: #2E7D32;
+                }
+
+                .popup-badge-closed {
+                  background-color: #FFEBEE;
+                  color: #C62828;
+                }
+
+                .popup-stats {
+                  margin-bottom: 12px;
+                  font-size: 13px;
+                  color: #555;
+                }
+
+                .popup-stat-value {
+                  font-size: 18px;
+                  font-weight: 700;
+                  color: #1A4D5C;
+                }
+
+                .popup-stat-sep {
+                  font-size: 18px;
+                  color: #999;
+                }
+
+                .popup-stat-total {
+                  font-size: 18px;
+                  font-weight: 700;
+                  color: #999;
+                }
+
+                .popup-stat-label {
+                  font-size: 12px;
+                  color: #666;
+                }
+
+                .popup-button {
+                  width: 100%;
+                  background-color: #1A4D5C;
+                  color: white;
+                  border: none;
+                  border-radius: 8px;
+                  padding: 10px 16px;
+                  font-weight: 700;
+                  font-size: 13px;
+                  cursor: pointer;
+                  font-family: inherit;
+                }
+
+                .popup-button:active {
+                  background-color: #0d3743;
+                }
+
+                /* Cache la flèche par défaut Leaflet */
+                .leaflet-popup-tip-container {
+                  display: none;
+                }
         </style>
       </head>
       <body>
@@ -169,16 +279,21 @@ useEffect(() => {
                   icon: getMarkerIcon(s.etat)
                   }).addTo(map);
 
-                marker.bindPopup(
-                  '<div style="text-align:center;">' +
-                  '<b>' + s.nom + '</b><br/>' +
-                  'État : ' + s.etat + '<br/>' +
-                  s.nombreComposants + ' équipements<br/>' +
-                  '<button onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type:\\'stationClicked\\', stationId:\\'' + s.id + '\\'}))" ' +
-                  'style="margin-top:8px;padding:6px 12px;background:#015060;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">' +
-                  'Voir le détail' +
+            marker.bindPopup(
+                '<div class="popup-card">' +
+                  '<div class="popup-title">' + s.nom + '</div>' +
+                  '<div class="popup-badge popup-badge-' + (s.etat === 'OUVERTE' ? 'open' : 'closed') + '">' + s.etat + '</div>' +
+                  '<div class="popup-stats">' +
+                    '<span class="popup-stat-value">' + (s.nombreComposantsDisponibles != null ? s.nombreComposantsDisponibles : 0) + '</span>' +
+                    '<span class="popup-stat-sep"> / </span>' +
+                    '<span class="popup-stat-total">' + (s.nombreComposantsTotal != null ? s.nombreComposantsTotal : 0) + '</span>' +
+                    '<span class="popup-stat-label"> équipements disponibles</span>' +
+                  '</div>' +
+                 
+                  '<button class="popup-button" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type:\\'stationClicked\\', stationId:\\'' + s.id + '\\'}))">' +
+                    'Voir le détail' +
                   '</button>' +
-                  '</div>'
+                '</div>',
                 );
                 stationMarkers.push(marker);
               });
@@ -209,7 +324,7 @@ const handleLogout = async () => {
   };
 
   const handleMenuPress = () => {
-    Alert.alert('Menu', 'Le menu sera disponible bientôt');
+    setFiltresVisible(true);
   };
 
   const handleWebViewMessage = (event: any) => {
@@ -236,6 +351,14 @@ const handleLogout = async () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
         <BlueHeader title="" showProfile showLogo showLogout compact />
+        {backendDown && (
+          <View style={styles.offlineBanner}>
+              <Ionicons name="cloud-offline-outline" size={16} color="#fff" />
+              <Text style={styles.offlineBannerText}>
+                  Reconnexion au serveur en cours...
+              </Text>
+          </View>
+      )}
       {/* CARTE LEAFLET dans WEBVIEW */}
       <View style={styles.mapContainer}>
         <WebView
@@ -257,6 +380,7 @@ const handleLogout = async () => {
           <View style={styles.menuLine} />
         </TouchableOpacity>
 
+
         {/* Bouton recentrer */}
         <TouchableOpacity onPress={handleRecenter} style={styles.recenterButton} activeOpacity={0.8}>
             <Ionicons name="locate-outline" size={26} color={Colors.PlayaBlue} />
@@ -266,6 +390,12 @@ const handleLogout = async () => {
       {/* BOTTOM NAV JAUNE */}
       <BottomNav />
       <StationDetailSheet ref={stationSheetRef} />
+      <FiltrersDrawer
+    visible={filtresVisible}
+    filtres={filtres}
+    onClose={() => setFiltresVisible(false)}
+    onApply={setFiltres}
+      />
     </SafeAreaView>
   );
 }
@@ -408,4 +538,18 @@ const styles = StyleSheet.create({
     color: Colors.PlayaBlue,
     fontFamily: Fonts.bold,
   },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#F5A623',         // orange doux
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+},
+offlineBannerText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+},
 });
