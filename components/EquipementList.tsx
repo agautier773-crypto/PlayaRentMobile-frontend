@@ -55,24 +55,26 @@ export default function EquipementsList({ equipements, loading }: Props) {
         );
     }
 
-    return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Équipements</Text>
-            {equipements.map((eq) => (
-                <View key={eq.id} style={styles.row}>
+return (
+    <View style={styles.container}>
+        <Text style={styles.title}>Équipements</Text>
+        {equipements.map((eq) => (
+            <View key={eq.id} style={styles.equipementBlock}>
+                {/* Ligne principale : icône + type + statut */}
+                <View style={styles.row}>
                     {/* Icône */}
-                        {getIconSource(eq.type) && (
-                            <Image
-                                source={getIconSource(eq.type)!}
-                                style={styles.icon}
-                                resizeMode="contain"
-                            />
-                        )}
+                    {getIconSource(eq.type) && (
+                        <Image
+                            source={getIconSource(eq.type)!}
+                            style={styles.icon}
+                            resizeMode="contain"
+                        />
+                    )}
 
-                        {/* Nom + type — PAS de prix ici */}
-                        <View style={styles.infoWrapper}>
-                            <Text style={styles.equipementType}>{eq.type}</Text>
-                        </View>
+                    {/* Nom + type */}
+                    <View style={styles.infoWrapper}>
+                        <Text style={styles.equipementType}>{eq.type}</Text>
+                    </View>
 
                     {/* Statut */}
                     <View style={styles.statusWrapper}>
@@ -96,11 +98,18 @@ export default function EquipementsList({ equipements, loading }: Props) {
                         </Text>
                     </View>
                 </View>
-            ))}
-        </View>
-    );
-}
 
+                {/* Informations complémentaires sous l'équipement */}
+                {eq.informations?.contenu && (
+                    <Text style={styles.equipementInfo}>
+                        {eq.informations.contenu}
+                    </Text>
+                )}
+            </View>
+        ))}
+    </View>
+);
+}
 const styles = StyleSheet.create({
     container: {
         marginVertical: 12,
@@ -169,5 +178,19 @@ icon: {
     width: 32,
     height: 32,
     marginRight: 12,
+},
+equipementBlock: {
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+},
+equipementInfo: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 4,
+    marginLeft: 38,                 
+    lineHeight: 16,
 },
 });

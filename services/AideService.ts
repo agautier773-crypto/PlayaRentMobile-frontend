@@ -56,7 +56,7 @@ export async function getEtapesPaddle(): Promise<PratiqueEtape[]> {
 
 //Récupère les obligations / règles.
 export async function getObligations(): Promise<obligations[]> {
-    const response = await fetch(`${API_BASE_URL}${ROUTES.AIDE_LOUER}`, {
+    const response = await fetch(`${API_BASE_URL}${ROUTES.AIDE_REGLES}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

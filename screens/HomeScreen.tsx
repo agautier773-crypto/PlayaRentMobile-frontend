@@ -17,7 +17,8 @@ import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { useAuth } from '../context/AuthContext';
 
-import { getAllStations } from '../services/StationService';
+import { getDonneesCarte } from '../services/CarteService';
+import type { CarteResponse, Groupe } from '../types/Carte';
 import { Station } from '../types/Stations';
 import { logger } from '../utils/logger';
 import { PLAYA_LOGO_SVG } from '../constants/Logos';
@@ -38,9 +39,9 @@ import FiltrersDrawer from '../components/FiltrersDrawer';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Centre initial : Pornic
-const INITIAL_LAT = 47.1153;
-const INITIAL_LNG = -2.1031;
-const INITIAL_ZOOM = 6;
+const INITIAL_LAT = 48.8566;
+const INITIAL_LNG = 2.3522;
+const INITIAL_ZOOM = 5;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -48,7 +49,8 @@ export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const { logout } = useAuth();
   const webViewRef = useRef<WebView>(null);
-  const [stations, setStations] = useState<Station[]>([]);
+  const [stationsSeules, setStationsSeules] = useState<Station[]>([]);
+  const [groupes, setGroupes] = useState<Groupe[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const stationSheetRef = useRef<StationDetailSheetRef>(null);
   const [backendDown, setBackendDown] = useState(false);
@@ -56,51 +58,53 @@ export default function HomeScreen() {
   const [filtres, setFiltres] = useState<FiltrerState>(FILTRES_VIDES);
   
 
-  const loadStations = async () => {
+const loadCarte = async () => {
     try {
-      const data = await getAllStations();
-      setStations(data.filter(s => 
-        s.estVisible && 
-        s.latitude != null &&
-        s.longitude != null &&
-        applyFiltres(s, filtres)
-      ));
-      setBackendDown(false);
-    }catch (error) {
-      setBackendDown(true);
+        const data = await getDonneesCarte();
+        
+        // Filtrer les stations seules
+        const stationsSeulesFiltrees = data.stationsSeules.filter(s =>
+            s.latitude != null &&
+            s.longitude != null &&
+            applyFiltres(s, filtres)
+        );
+        
+        // Filtrer les groupes (ceux qui ont au moins 1 station qui passe le filtre)
+        const groupesFiltres = data.groupes.filter(g =>
+            g.latitude != null &&
+            g.longitude != null &&
+            g.stations.some(s => applyFiltres(s, filtres))
+        );
+        
+        setStationsSeules(stationsSeulesFiltrees);
+        setGroupes(groupesFiltres);
+        setBackendDown(false);
+    } catch (error) {
+        logger.warn('HomeScreen', 'Backend indisponible, retry au prochain refresh');
+        setBackendDown(true);
     }
-  };
-  // refresh les markers a chauqe fois que l'ecran devient actif 
-  useFocusEffect(
-    useCallback(() => {
-    loadStations();
-  }, [])
-);
-
+};
 useEffect(() => {
-    loadStations();
+    loadCarte();
 }, [filtres]);
 
-// On injecte les stations sur la carte 
-  const injectStations = (data: Station[]) => {
-    if (data.length === 0) return;
-    const stationsJson = JSON.stringify(data);
-    const script = `window.setStations(${JSON.stringify(stationsJson)}); true;`;
+// On injecte les markers
+const injectMarkers = (stationsSeules: Station[], groupes: Groupe[]) => {
+    const payload = JSON.stringify({ stationsSeules, groupes });
+    const script = `window.setMarkers(${JSON.stringify(payload)}); true;`;
     webViewRef.current?.injectJavaScript(script);
-  };
+};
 
-//Quand les stations changent on tente de les réinjecter 
-  useEffect(() => {
-    if(mapReady && stations.length > 0) {
-
-      injectStations(stations);
+useEffect(() => {
+    if (mapReady) {
+        injectMarkers(stationsSeules, groupes);
     }
-  }, [mapReady, stations]);
+}, [mapReady, stationsSeules, groupes]);
 
 useEffect(() => {
     const interval = setInterval(() => {
         logger.info('HomeScreen', 'Auto-refresh stations (60s)');
-        loadStations();
+        loadCarte();
     },60_000);
 
     // Nettoyage à la sortie du composant (essentiel pour éviter les memory leaks)
@@ -210,6 +214,20 @@ useEffect(() => {
                 .popup-button:active {
                   background-color: #0d3743;
                 }
+              .marker-badge {
+                  background-color: #E8623C !important;
+                  color: white !important;
+                  border: 1.5px solid white !important;
+                  border-radius: 50% !important;
+                  width: 18px !important;
+                  height: 18px !important;
+                  line-height: 15px !important;
+                  text-align: center !important;
+                  font-weight: 700 !important;
+                  font-size: 10px !important;
+                  padding: 0 !important;
+                  box-shadow: 0 1px 3px rgba(0,0,0,0.25) !important;
+              }
 
                 /* Cache la flèche par défaut Leaflet */
                 .leaflet-popup-tip-container {
@@ -244,66 +262,119 @@ useEffect(() => {
 
           // Gestion des markers de stations
           var stationMarkers = [];
+          let allMarkers = [];
 
-          window.setStations = function(stationsJson) {
-            try {
-              stationMarkers.forEach(function(m) { map.removeLayer(m); });
-              stationMarkers = [];
-              var stations = JSON.parse(stationsJson);
-
-              function getMarkerIcon(etat){
+            function getMarkerIcon(etat) {
                 var color;
                 if (etat === 'OUVERTE') color = '#015060';
-                else if (etat === 'FERME') color = '#D32F2F';
-                else color = '#888888' 
+                else if (etat === 'FERMEE' || etat === 'FERME') color = '#888888';
+                else color = '#888888';
+                
                 var html = 
-                  '<div style="position: relative; width: 36px; height: 48px;">' +
-                    // La goutte en SVG
-                    '<svg width="36" height="38" viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));">' +
-                      '<path d="M18 0 C8 0 0 8 0 18 C0 30 18 48 18 48 C18 48 36 30 36 18 C36 8 28 0 18 0 Z" fill="' + color + '"/>' +
-                    '</svg>' +
-                    '<div style="position: absolute; top: 7px; left: 9px; width: 18px; height: 18px;">' + PLAYA_LOGO_SVG + '</div>' +
-                  '</div>';
+                    '<div style="position: relative; width: 36px; height: 48px;">' +
+                        '<svg width="36" height="38" viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));">' +
+                            '<path d="M18 0 C8 0 0 8 0 18 C0 30 18 48 18 48 C18 48 36 30 36 18 C36 8 28 0 18 0 Z" fill="' + color + '"/>' +
+                        '</svg>' +
+                        '<div style="position: absolute; top: 7px; left: 9px; width: 18px; height: 18px;">' + PLAYA_LOGO_SVG + '</div>' +
+                    '</div>';
                 
                 return L.divIcon({
-                  html: html,
-                  className: 'custom-marker',
-                  iconSize: [30, 40],
-                  iconAnchor: [18, 48],     // ← la pointe touche la coordonnée GPS
-                  popupAnchor: [0, -48]
+                    html: html,
+                    className: 'custom-marker',
+                    iconSize: [30, 40],
+                    iconAnchor: [18, 48],
+                    popupAnchor: [0, -48]
                 });
-              }
-
-              stations.forEach(function(s) {
-                var marker = L.marker([s.latitude, s.longitude], {
-                  icon: getMarkerIcon(s.etat)
-                  }).addTo(map);
-
-            marker.bindPopup(
-                '<div class="popup-card">' +
-                  '<div class="popup-title">' + s.nom + '</div>' +
-                  '<div class="popup-badge popup-badge-' + (s.etat === 'OUVERTE' ? 'open' : 'closed') + '">' + s.etat + '</div>' +
-                  '<div class="popup-stats">' +
-                    '<span class="popup-stat-value">' + (s.nombreComposantsDisponibles != null ? s.nombreComposantsDisponibles : 0) + '</span>' +
-                    '<span class="popup-stat-sep"> / </span>' +
-                    '<span class="popup-stat-total">' + (s.nombreComposantsTotal != null ? s.nombreComposantsTotal : 0) + '</span>' +
-                    '<span class="popup-stat-label"> équipements disponibles</span>' +
-                  '</div>' +
-                 
-                  '<button class="popup-button" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type:\\'stationClicked\\', stationId:\\'' + s.id + '\\'}))">' +
-                    'Voir le détail' +
-                  '</button>' +
-                '</div>',
-                );
-                stationMarkers.push(marker);
-              });
-            }catch (e){
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'jsError',
-                message: 'setStations: ' + e.message
-              }));
             }
+
+            // Alias pour compatibilité
+            function getIconForType(typeComposant) {
+                return getMarkerIcon('OUVERTE');   // fallback bleu
+            }
+
+          window.setMarkers = function(payloadJson) {
+              try {
+                  // Clear les markers existants
+                  allMarkers.forEach(m => map.removeLayer(m));
+                  allMarkers = [];
+                  
+                  const payload = typeof payloadJson === 'string' ? JSON.parse(payloadJson) : payloadJson;
+                  const data = typeof payload === 'string' ? JSON.parse(payload) : payload;
+                  
+                  const stationsSeules = data.stationsSeules || [];
+                  const groupes = data.groupes || [];
+                  
+                  // 1. Markers stations seules (comportement classique)
+                  stationsSeules.forEach(function(s) {
+                    const marker = L.marker([s.latitude, s.longitude], { 
+                        icon: getMarkerIcon(s.etat) 
+                    }).addTo(map);
+                      
+                      marker.bindPopup(
+                          '<div class="popup-card">' +
+                            '<div class="popup-title">' + s.nom + '</div>' +
+                            '<div class="popup-badge popup-badge-' + (s.etat === 'OUVERTE' ? 'open' : 'closed') + '">' + s.etat + '</div>' +
+                            '<div class="popup-stats">' +
+                              '<span class="popup-stat-value">' + (s.nombreComposantsDisponibles != null ? s.nombreComposantsDisponibles : 0) + '</span>' +
+                              '<span class="popup-stat-sep"> / </span>' +
+                              '<span class="popup-stat-total">' + (s.nombreComposantsTotal != null ? s.nombreComposantsTotal : 0) + '</span>' +
+                              '<span class="popup-stat-label"> équipements disponibles</span>' +
+                            '</div>' +
+                            '<button class="popup-button" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type:\\'stationClicked\\', stationId:\\'' + s.id + '\\'}))">' +
+                              'Voir le détail' +
+                            '</button>' +
+                          '</div>',
+                          { maxWidth: 320, minWidth: 280, className: 'custom-popup', closeButton: true }
+                      );
+                      allMarkers.push(marker);
+                  });
+                  
+                  // 2. Markers groupes (avec badge si > 1 station)
+                  groupes.forEach(function(g) {
+                      const marker = L.marker([g.latitude, g.longitude], { 
+                          icon: getMarkerIcon(g.etat) 
+                      }).addTo(map);
+                      
+                      // Ajouter badge numérique si > 1 station
+                      if (g.stations.length > 1) {
+                          marker.bindTooltip(String(g.stations.length), {
+                              permanent: true,
+                              direction: 'right',
+                              offset: [4, -32],
+                              className: 'marker-badge'
+                          });
+                      }
+                      
+                      const titre = g.nom + (g.stations.length > 1 ? ' (' + g.stations.length + ' stations)' : '');
+                      
+                      marker.bindPopup(
+                          '<div class="popup-card">' +
+                            '<div class="popup-title">' + titre + '</div>' +
+                            '<div class="popup-badge popup-badge-' + (g.etat === 'OUVERTE' ? 'open' : 'closed') + '">' + g.etat + '</div>' +
+                            '<div class="popup-stats">' +
+                              '<span class="popup-stat-value">' + g.nombreComposantsDisponibles + '</span>' +
+                              '<span class="popup-stat-sep"> / </span>' +
+                              '<span class="popup-stat-total">' + g.nombreComposantsTotal + '</span>' +
+                              '<span class="popup-stat-label"> équipements disponibles</span>' +
+                            '</div>' +
+                            '<button class="popup-button" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({type:\\'groupeClicked\\', groupeId:\\'' + g.id + '\\'}))">' +
+                              'Voir le détail' +
+                            '</button>' +
+                          '</div>',
+                          { maxWidth: 320, minWidth: 280, className: 'custom-popup', closeButton: true }
+                      );
+                      allMarkers.push(marker);
+                  });
+                  
+              } catch (e) {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                      type: 'jsError',
+                      message: 'setMarkers: ' + e.message
+                  }));
+              }
           };
+
+
           window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'mapReady' }));
         </script>
       </body>
@@ -327,26 +398,32 @@ const handleLogout = async () => {
     setFiltresVisible(true);
   };
 
-  const handleWebViewMessage = (event: any) => {
+const handleWebViewMessage = (event: any) => {
     try {
-      const data = JSON.parse(event.nativeEvent.data);
-      if(data.type === 'log') {
-        logger.info('WebView', data.message);
-      }
-      if (data.type === 'jsError'){
-        logger.error('WebView JS', data.message);
-      }
-      if(data.type === 'mapReady'){
-        
-        setMapReady(true);
-      }
-      else if (data.type === 'stationClicked'){
-        stationSheetRef.current?.open(data.stationId);
-      }
-    }catch (err){
-      logger.error('HomeScreen', 'Erreur de chargement de la WebView', err);
+        const data = JSON.parse(event.nativeEvent.data);
+        if (data.type === 'log') {
+            logger.info('WebView', data.message);
+        }
+        if (data.type === 'jsError') {
+            logger.error('WebView JS', data.message);
+        }
+        if (data.type === 'mapReady') {
+            setMapReady(true);
+        }
+        else if (data.type === 'stationClicked') {
+            stationSheetRef.current?.open(data.stationId);
+        }
+        else if (data.type === 'groupeClicked') {                  
+            const groupe = groupes.find(g => g.id === data.groupeId);
+            if (groupe) {
+                stationSheetRef.current?.openGroupe(groupe);
+            }
+            logger.info('HomeScreen', `Groupe cliqué : ${data.groupeId}`);
+        }
+    } catch (err) {
+        logger.error('HomeScreen', 'Erreur de chargement de la WebView', err);
     }
-  };
+};
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
