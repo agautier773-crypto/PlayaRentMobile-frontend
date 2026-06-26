@@ -318,9 +318,7 @@ const renderPratiqueEtape = ({ item }: { item: PratiqueEtape }) => {
     )}
   </>
 )}
-    
     </View>
-
       {/* BOTTOM NAV */}
     <BottomNav />
     </View>

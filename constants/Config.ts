@@ -1,9 +1,9 @@
 import { Platform } from 'react-native';
 
 export const API_BASE_URL = Platform.select({
-    android: 'http://192.168.137.103:8080/api',
-  ios: 'http://192.168.137.103:8080/api',
-  default: 'http://192.168.137.103:8080/api',
+    android: 'http://192.168.1.174:8080/api',
+  ios: 'http://192.168.1.174:8080/api',
+  default: 'http://192.168.1.174:8080/api',
 });
 
 export const ROUTES = {
@@ -26,3 +26,9 @@ export const STORAGE_KEYS = {
     USER_EMAIL: 'user_email',
     USER_ROLE: 'user_role',
 };
+export const LEGAL_URLS = {
+  cgu:'https://www.playa-rent.fr/wp-content/uploads/2026/04/CGAU-AloaSUP.pdf',
+  privacy:'https://www.playa-rent.fr/politique-de-confidentialite/',
+} as const;
+
+export type LegalDoc = keyof typeof LEGAL_URLS;

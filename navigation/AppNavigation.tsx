@@ -10,6 +10,8 @@ import AideConseilsScreen from '../screens/AideConseilsScreen';
 import ScanRideScreen from '../screens/ScanRideScreen';
 import FavorisScreen from '../screens/FavorisScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import type { LegalDoc } from '../constants/Config';
+import LegalScreen from '../screens/LegalScreen';
 
 export type RootStackParamList = {
     Login: undefined;
@@ -20,6 +22,7 @@ export type RootStackParamList = {
     ScanRide: undefined;
     Favoris: undefined;
     Profile: undefined;
+    Legal: { doc: LegalDoc; title?: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -57,6 +60,11 @@ export default function AppNavigator(){
                     <Stack.Screen name="Register" component={RegisterScreen} />
                     </>
                 )}
+                    <Stack.Screen
+                    name="Legal"
+                    component={LegalScreen}
+                    options={{ headerShown: false }} 
+                    />
                 </Stack.Navigator>
         </NavigationContainer>
     );

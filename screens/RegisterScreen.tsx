@@ -172,22 +172,33 @@ export default function RegisterScreen({ navigation }: Props) {
         <Text style={styles.errorText}>Les mots de passe ne correspondent pas</Text>
       )}
 
-      {/* Newsletter */}
-      <Checkbox
-        checked={acceptNewsletter}
-        onPress={() => setAcceptNewsletter(!acceptNewsletter)}
-        label="Je souhaite recevoir par mail des offres personnalisées et les dernières mises à jour"
-      />
-
-      {/* CGU */}
-      <Checkbox
-        checked={acceptCGU}
-        onPress={() => setAcceptCGU(!acceptCGU)}
-        label="En m'inscrivant, je confirme que j'accepte les Termes et conditions de PlayaRent, avoir lu la politique de confidentialité et avoir au moins 18 ans."
-      />
-      {showValidation && !validation.cguAccepted && (
-        <Text style={styles.errorText}>Tu dois accepter les CGU</Text>
-      )}
+{/* CGU */}
+<Checkbox
+  checked={acceptCGU}
+  onPress={() => setAcceptCGU(!acceptCGU)}
+  label={
+    <>
+      En m'inscrivant, je confirme que j'accepte les{' '}
+      <Text
+        style={styles.cguLink}
+        onPress={() => navigation.navigate('Legal', { doc: 'cgu' })}
+      >
+        Termes et conditions de PlayaRent
+      </Text>
+      , avoir lu la{' '}
+      <Text
+        style={styles.cguLink}
+        onPress={() => navigation.navigate('Legal', { doc: 'privacy' })}
+      >
+        politique de confidentialité
+      </Text>
+      {' '}et avoir au moins 18 ans.
+    </>
+  }
+/>
+{showValidation && !validation.cguAccepted && (
+  <Text style={styles.errorText}>Tu dois accepter les CGU</Text>
+)}
 
       {/* Erreur API */}
       {errorMessage !== '' && (
@@ -227,7 +238,7 @@ function PasswordRule({ ok, text }: { ok: boolean; text: string }) {
   );
 }
 
-function Checkbox({ checked, onPress, label }: { checked: boolean; onPress: () => void; label: string }) {
+function Checkbox({ checked, onPress, label }: { checked: boolean; onPress: () => void; label: React.ReactNode }) {
   return (
     <TouchableOpacity onPress={onPress} style={styles.checkboxContainer} activeOpacity={0.7}>
       <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
@@ -279,6 +290,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
+    color:'#000000',
   },
   eyeButton: {
     paddingHorizontal: 16,
@@ -364,4 +376,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textDecorationLine: 'underline',
   },
+  cguLink: {
+  color: '#1A4D5C',
+  fontWeight: '700',
+  textDecorationLine: 'underline',
+},
 });

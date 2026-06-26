@@ -372,16 +372,16 @@ const renderModeGroupeContent = () => {
                     </TouchableOpacity>
                     
                     <TouchableOpacity
-                        onPress={() => {
-                            bottomSheetRef.current?.close();
-                            setGroupe(null);
-                            setStationsDuGroupe([]);
-                        }}
-                        activeOpacity={0.7}
-                        
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        onPress={toggleFavori}
+                        disabled={favoriLoading}
+                        activeOpacity={1}
+                        style={styles.favoriButton}
                     >
-                        <Ionicons name="close" size={26} color="#666" />
+                        <Ionicons
+                            name={isFavori ? 'heart' : 'heart-outline'}
+                            size={28}
+                            color={Colors.PlayaOrange}
+                        />
                     </TouchableOpacity>
                 </View>
             </View>

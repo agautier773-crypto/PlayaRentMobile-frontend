@@ -22,7 +22,7 @@ export async function getEtapesLocation(): Promise<LocationEtape[]> {
 
 //Récupère les étapes pour le canoë / kayak.
 export async function getEtapesCanoe(): Promise<PratiqueEtape[]> {
-    const response = await fetch(`${API_BASE_URL}${ROUTES.AIDE_LOUER}`, {
+    const response = await fetch(`${API_BASE_URL}${ROUTES.AIDE_CANOE}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ export async function getEtapesCanoe(): Promise<PratiqueEtape[]> {
 
 // Récupère les étapes pour le paddle.
 export async function getEtapesPaddle(): Promise<PratiqueEtape[]> {
-    const response = await fetch(`${API_BASE_URL}${ROUTES.AIDE_LOUER}`, {
+    const response = await fetch(`${API_BASE_URL}${ROUTES.AIDE_PADDLE}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
