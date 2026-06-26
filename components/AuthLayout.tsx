@@ -18,7 +18,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type AuthLayoutProps = {
   title: string;
-  logo: ImageSourcePropType;  // ← nouveau : logo passé en prop
+  logo: ImageSourcePropType;  
   children: ReactNode;
 };
 

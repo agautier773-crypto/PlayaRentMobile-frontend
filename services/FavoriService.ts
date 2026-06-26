@@ -21,11 +21,12 @@ export async function getFavoris(): Promise<Station[]> {
 
 // Ajoute une station aux favoris.
 export async function addFavori(idStation: string): Promise<void> {
-    const response = await fetchWithAuth(`/favoris/${idStation}`, {
+    const response = await fetchWithAuth(`/favoris/${encodeURIComponent(idStation)}`, {
         method: 'POST',
     });
 
     if (!response.ok) {
+
         throw new Error(`Erreur ajout favori (status ${response.status})`);
     }
 
@@ -34,7 +35,7 @@ export async function addFavori(idStation: string): Promise<void> {
 
  //Retire une station des favoris.
 export async function removeFavori(idStation: string): Promise<void> {
-    const response = await fetchWithAuth(`/favoris/${idStation}`, {
+    const response = await fetchWithAuth(`/favoris/${encodeURIComponent(idStation)}`, {
         method: 'DELETE',
     });
 

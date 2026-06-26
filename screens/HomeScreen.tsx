@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#F5A623',         // orange doux
+    backgroundColor: '#F5A623',         
     paddingVertical: 6,
     paddingHorizontal: 12,
 },

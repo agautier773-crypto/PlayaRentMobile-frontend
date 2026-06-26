@@ -18,7 +18,7 @@ import { Fonts } from '../constants/Fonts';
 import { logger } from '../utils/logger';
 import { getPhotosByStation } from '../services/PhotoService';
 import { Photo } from '../types/Photo';
-import { addFavori, removeFavori, existeFavori } from '../services/FavoriService';
+import { addFavori, removeFavori, existeFavori, getFavoris } from '../services/FavoriService';
 import { Ionicons } from '@expo/vector-icons';
 import EquipementsList from '../components/EquipementList';
 import { Equipement } from '../types/Equipement';
@@ -41,8 +41,8 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
   const [error, setError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
-  const [isFavori, setIsFavori] = useState(false);
-  const [favoriLoading, setFavoriLoading] = useState(false);
+  const [favorisIds, setFavorisIds] = useState<Set<string>>(new Set());
+  const [favoriLoadingIds, setFavoriLoadingIds] = useState<Set<string>>(new Set());
   // Points d'arrêt du sheet : 35% (preview) et 80% (étendu)
   const snapPoints = useMemo(() => ['35%', '85%'], []);
   const [equipements, setEquipements] = useState<Equipement[]>([]);
@@ -50,6 +50,7 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
   const [refreshing, setRefreshing] = useState(false);
   const [groupe, setGroupe] = useState<Groupe | null>(null);
   const [stationsDuGroupe, setStationsDuGroupe] = useState<Station[]>([]);
+  const [photosParStation, setPhotosParStation] = useState<Record<string, Photo[]>>({});
 
   // Expose des méthodes au parent (HomeScreen)
 useImperativeHandle(ref, () => ({
@@ -79,17 +80,12 @@ const loadStation = async (stationId: string) => {
     setStation(null);
     setPhotos([]);
     setEquipements([]);
-    setIsFavori(false);
     try {
       const data = await getStationById(stationId);
       setStation(data);
       setEquipements(data.composants || []);
       loadPhotos(stationId);
       
-      // Favoris uniquement si connecté
-      if (!isGuest) {
-          checkFavoriStatus(stationId);
-      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue';
       setError(message);
@@ -114,12 +110,15 @@ const loadStationsDuGroupe = async (g: Groupe) => {
     setLoading(true);
     setError(null);
     setStationsDuGroupe([]);
+    setPhotosParStation({});         
     
     try {
         // Charger les détails de chaque station du groupe en parallèle
         const promises = g.stations.map(s => getStationById(s.id));
         const detailedStations = await Promise.all(promises);
         setStationsDuGroupe(detailedStations);
+
+        chargerPhotosGroupe(detailedStations);
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Erreur inconnue';
         setError(message);
@@ -129,19 +128,9 @@ const loadStationsDuGroupe = async (g: Groupe) => {
     }
 };
 
-// Vérifie si la station est en favori
-const checkFavoriStatus = async (stationId: string) => {
-  try {
-    const isFavori = await existeFavori(stationId);
-    setIsFavori(isFavori);
-  } catch (err) {
-    logger.error('StationDetailSheet', 'Erreur vérification favori', err);
-  }
-};
+const toggleFavoriStation = async (stationId: string) => {
+    if(favoriLoadingIds.has(stationId)) return;
 
-const toggleFavori = async () => {
-
-  if (!station || favoriLoading) return;
       if (isGuest) {
         Alert.alert(
             'Connexion requise',
@@ -154,19 +143,28 @@ const toggleFavori = async () => {
         return;
     }
 
-  setFavoriLoading(true);
+  setFavoriLoadingIds((prev) => new Set(prev).add(stationId));
+  const dejaFavori = favorisIds.has(stationId);
+
   try {
-    if (isFavori) {
-      await removeFavori(station.id);
-      setIsFavori(false);
+    if (dejaFavori) {
+      await removeFavori(stationId);
     } else {
-      await addFavori(station.id);
-      setIsFavori(true);
+      await addFavori(stationId);
     }
+    setFavorisIds((prev) => {
+        const next = new Set(prev);
+        dejaFavori ? next.delete(stationId) : next.add(stationId);
+        return next;
+    });
   } catch (err) {
     logger.error('StationDetailSheet', 'Erreur toggle favori', err);
   } finally {
-    setFavoriLoading(false);
+    setFavoriLoadingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(stationId);
+        return next;
+    });
   }
 };
 
@@ -190,6 +188,24 @@ function getInformationsUniques(composants: Equipement[]): string[] {
     return Array.from(set);
 }
 
+const chargerPhotosGroupe = async (stations: Station[]) => {
+  try {
+    const entries = await Promise.all(
+      stations.map(async (s) => {
+        try {
+          const data = await getPhotosByStation(s.id);
+          return [s.id, data] as const;
+        } catch {
+          return [s.id, []] as const;  // une station sans photo ne bloque pas les autres
+        }
+      })
+    );
+    setPhotosParStation(Object.fromEntries(entries));
+  } catch (err) {
+    logger.error('StationDetailSheet', 'Erreur chargement photos groupe', err);
+  }
+};
+
 const rotateAnim = useRef(new Animated.Value(0)).current;
 
 useEffect(() => {
@@ -207,6 +223,23 @@ useEffect(() => {
         rotateAnim.setValue(0);
     }
 }, [refreshing]);
+
+useEffect(() => {
+  if (isGuest) {
+    setFavorisIds(new Set());
+    return;
+  }
+  let annule = false;
+  (async () => {
+    try {
+      const data = await getFavoris();
+      if (!annule) setFavorisIds(new Set(data.map((s) => s.id)));
+    } catch (err) {
+      logger.error('StationDetailSheet', 'Erreur chargement favoris', err);
+    }
+  })();
+  return () => { annule = true; };
+}, [isGuest]);
 
 const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],
@@ -245,16 +278,17 @@ const renderModeStationContent = () => {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        onPress={toggleFavori}
-                        disabled={favoriLoading}
-                        activeOpacity={1}
-                        style={styles.favoriButton}
+                    onPress={() => toggleFavoriStation(station.id)}
+                    disabled={favoriLoadingIds.has(station.id)}
+                    activeOpacity={0.7}
+                    style={styles.favoriButton}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
-                        <Ionicons
-                            name={isFavori ? 'heart' : 'heart-outline'}
-                            size={28}
-                            color={Colors.PlayaOrange}
-                        />
+                    <Ionicons
+                        name={favorisIds.has(station.id) ? 'heart' : 'heart-outline'}
+                        size={28}
+                        color={Colors.PlayaOrange}
+                    />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -354,7 +388,7 @@ const renderModeGroupeContent = () => {
     
     const infosGroupe = toutesInfosGroupe();
     
-    return (
+   return (
         <>
             <View style={styles.titleRow}>
                 <Text style={styles.stationName}>{groupe.nom}</Text>
@@ -369,19 +403,6 @@ const renderModeGroupeContent = () => {
                         <Animated.View style={{ transform: [{ rotate }] }}>
                             <Ionicons name="refresh-outline" size={24} color={Colors.PlayaBlue} />
                         </Animated.View>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity
-                        onPress={toggleFavori}
-                        disabled={favoriLoading}
-                        activeOpacity={1}
-                        style={styles.favoriButton}
-                    >
-                        <Ionicons
-                            name={isFavori ? 'heart' : 'heart-outline'}
-                            size={28}
-                            color={Colors.PlayaOrange}
-                        />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -414,23 +435,60 @@ const renderModeGroupeContent = () => {
                 <Text style={styles.statsLabel}>équipements disponibles</Text>
             </View>
 
-            {/* Sections empilées pour chaque station (SANS infos individuelles) */}
-            {stationsDuGroupe.map((s) => (
-                <View key={s.id} style={styles.stationSection}>
-                    <View style={styles.stationSectionHeader}>
-                        <Text style={styles.stationSectionTitle}>{s.nom}</Text>
-                        <View
-                            style={[
-                                styles.miniBadge,
-                                s.etat === 'OUVERTE' ? styles.badgeOuverte : styles.badgeFermee,
-                            ]}
-                        >
-                            <Text style={styles.miniBadgeText}>{s.etat}</Text>
+            {stationsDuGroupe.map((s) => {
+                const photosStation = photosParStation[s.id] || [];
+                return (
+                    <View key={s.id} style={styles.groupeStationSection}>
+                        <View style={styles.groupeStationHeader}>
+                            <Text style={styles.groupeStationNom} numberOfLines={1}>{s.nom}</Text>
+
+                            <View style={styles.groupeStationActions}>
+                                <View style={[styles.badge, s.etat === 'OUVERTE' ? styles.badgeOuverte : styles.badgeFermee]}>
+                                    <Text style={styles.badgeText}>{s.etat}</Text>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => toggleFavoriStation(s.id)}
+                                    disabled={favoriLoadingIds.has(s.id)}
+                                    activeOpacity={0.7}
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    style={styles.favoriButtonSmall}
+                                >
+                                    <Ionicons
+                                        name={favorisIds.has(s.id) ? 'heart' : 'heart-outline'}
+                                        size={22}
+                                        color={Colors.PlayaOrange}
+                                    />
+                                </TouchableOpacity>
+                            </View>
                         </View>
+
+                        <EquipementsList equipements={s.composants} />
+
+                        {/* Photos de cette station — même rendu que le mode station */}
+                        {photosStation.length > 0 && (
+                            <View style={styles.photosSection}>
+                                <Text style={styles.sectionTitle}>Photos</Text>
+                                <View style={styles.photosGrid}>
+                                    {photosStation.map((photo) => (
+                                        <View key={photo.idPhoto} style={styles.photoCard}>
+                                            <Image
+                                                source={{ uri: photo.url }}
+                                                style={styles.photoImage}
+                                                resizeMode="cover"
+                                            />
+                                            {photo.titre && (
+                                                <Text style={styles.photoTitre} numberOfLines={1}>
+                                                    {photo.titre}
+                                                </Text>
+                                            )}
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
                     </View>
-                    <EquipementsList equipements={s.composants || []} />
-                </View>
-            ))}
+                );
+            })}
 
             <TouchableOpacity
                 style={[
@@ -615,7 +673,6 @@ photoCard: {
   width: 160,                
   borderRadius: 12,
   overflow: 'hidden',
-  // pas de fond
 },
 photoImage: {
   width: 160,
@@ -636,38 +693,7 @@ titleRow: {
 favoriButton: {
   padding: 4,
 },
-tarifsSection: {
-    marginVertical: 16,
-    paddingHorizontal: 4,
-},
-tarifBloc: {
-    backgroundColor: '#F8F8F8',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-},
-tarifDescription: {
-    fontSize: 14,
-    fontFamily: Fonts.bold,
-    color: Colors.PlayaBlue,
-    marginBottom: 8,
-},
 
-infosSection: {
-    marginVertical: 16,
-    paddingHorizontal: 4,
-},
-infosBloc: {
-    backgroundColor: '#F8F8F8',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-},
-infosContenu: {
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-},
 titleActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -711,47 +737,13 @@ statsLabel: {
     color: '#666',
     fontFamily: Fonts.regular,
 },
-stationSection: {
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+groupeStationSection: { marginTop: 16 },
+groupeStationHeader: {
+flexDirection: 'row',
+alignItems: 'center',
+justifyContent: 'space-between',
 },
-stationSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-},
-stationSectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.PlayaBlue,
-    fontFamily: Fonts.bold,
-},
-miniBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-},
-miniBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#fff',
-},
-infosSectionGroupe: {
-    marginTop: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-},
-sectionTitleSmall: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 6,
-    fontFamily: Fonts.bold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-},
+groupeStationNom: { flex: 1, fontSize: 16, fontWeight: '600', color: Colors.PlayaBlue },
+groupeStationActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+favoriButtonSmall: { padding: 4 },
 });

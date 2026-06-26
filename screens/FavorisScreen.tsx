@@ -20,6 +20,8 @@ import BlueHeader from '../components/HeaderBlue';
 import { RootStackParamList } from '../navigation/AppNavigation';
 import BottomNav from '../components/BottomNav';
 import { useAuth } from '../context/AuthContext';
+import { LayoutAnimation, Platform, UIManager } from 'react-native';
+import EquipementsList from '../components/EquipementList';
 
 export default function FavorisScreen() {
   const navigation = useNavigation();
@@ -29,6 +31,7 @@ export default function FavorisScreen() {
   const [favoris, setFavoris] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Recharge à chaque fois qu'on arrive sur l'écran
   useFocusEffect(
@@ -69,6 +72,11 @@ export default function FavorisScreen() {
   const handleCreerCompte = () => {
     logout();
   };
+
+  const toggleExpand = (id: string) => {
+  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  setExpandedId((prev) => (prev === id ? null : id));  // accordéon : un seul ouvert à la fois
+};
 
 if(isGuest) {
   return (
@@ -128,36 +136,66 @@ if(isGuest) {
           data={favoris}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <View style={styles.favoriCard}>
-              <View style={styles.favoriInfo}>
-                <Text style={styles.favoriName}>{item.nom}</Text>
-                <View style={styles.favoriMeta}>
-                  <View
-                    style={[
-                      styles.badge,
-                      item.etat === 'OUVERTE'
-                        ? styles.badgeOuverte
-                        : styles.badgeFermee,
-                    ]}
-                  >
-                    <Text style={styles.badgeText}>{item.etat}</Text>
-                  </View>
-                  <Text style={styles.composants}>
-                    {item.nombreComposants} équipements
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                onPress={() => handleRetirer(item)}
-                activeOpacity={1}
-                style={styles.heartButton}
-              >
-                <Ionicons name="heart" size={26} color={Colors.PlayaOrange} />
-              </TouchableOpacity>
+renderItem={({ item }) => {
+  const expanded = expandedId === item.id;
+  return (
+    <View style={styles.favoriCard}>
+      <View style={styles.favoriHeader}>
+        {/* Zone tappable pour déplier */}
+        <TouchableOpacity
+          onPress={() => toggleExpand(item.id)}
+          activeOpacity={0.7}
+          style={styles.favoriInfo}
+        >
+          <Text style={styles.favoriName}>{item.nom}</Text>
+          <View style={styles.favoriMeta}>
+            <View
+              style={[
+                styles.badge,
+                item.etat === 'OUVERTE' ? styles.badgeOuverte : styles.badgeFermee,
+              ]}
+            >
+              <Text style={styles.badgeText}>{item.etat}</Text>
             </View>
-            
-          )}
+            <Text style={styles.composants}>
+              {item.nombreComposantsDisponibles} équipements disponibles
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+              {/* Actions : retirer + chevron */}
+              <View style={styles.favoriActions}>
+                <TouchableOpacity
+                  onPress={() => handleRetirer(item)}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.heartButton}
+                >
+                  <Ionicons name="heart" size={26} color={Colors.PlayaOrange} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => toggleExpand(item.id)}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons
+                    name={expanded ? 'chevron-up' : 'chevron-down'}
+                    size={22}
+                    color={Colors.PlayaBlue}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Détails dépliés */}
+            {expanded && (
+              <View style={styles.favoriDetails}>
+                <EquipementsList equipements={item.composants} loading={false} />
+              </View>
+            )}
+          </View>
+        );
+      }}
         />
       )}
       <BottomNav />
@@ -223,19 +261,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-  },
-  favoriCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
   },
   favoriInfo: {
     flex: 1,
@@ -333,5 +358,30 @@ guestButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontFamily: Fonts.bold,
+},
+
+favoriCard: {
+  backgroundColor: '#FFF',
+  borderRadius: 12,
+  marginBottom: 12,
+  padding: 16,
+  // ⚠️ retire 'flexDirection: row' s'il y était — on veut une colonne maintenant
+},
+favoriHeader: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+},
+
+favoriActions: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 12,
+},
+favoriDetails: {
+  marginTop: 12,
+  paddingTop: 12,
+  borderTopWidth: 1,
+  borderTopColor: '#EEE',
 },
 });

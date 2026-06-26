@@ -123,23 +123,30 @@ export default function RegisterScreen({ navigation }: Props) {
         <Text style={styles.errorText}>Email invalide</Text>
       )}
 
-      {/* Mot de passe avec œil */}
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={[styles.passwordInput, {color:'#000000'}]}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Mot de passe"
-          placeholderTextColor="#000000"
-          secureTextEntry={!showPassword}
+    {/* Mot de passe avec œil */}
+    <View style={styles.passwordContainer}>
+      <TextInput
+        style={styles.passwordInput}
+        value={password}
+        onChangeText={setPassword}
+        placeholder="Mot de passe"
+        placeholderTextColor="#000000"
+        secureTextEntry={!showPassword}
+      />
+      <TouchableOpacity
+        onPress={() => setShowPassword(!showPassword)}
+        style={styles.eyeButton}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityRole="button"
+        accessibilityLabel={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+      >
+        <Ionicons
+          name={showPassword ? 'eye-off' : 'eye'}
+          size={22}
+          color="#1A4D5C"
         />
-        <TouchableOpacity
-          onPress={() => setShowPassword(!showPassword)}
-          style={styles.eyeButton}
-        >
-          <Text style={styles.eyeIcon}>{showPassword ? '' : ''}</Text>
-        </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
+    </View>
 
       {/* Règles de mot de passe */}
       {password.length > 0 && (
@@ -150,27 +157,33 @@ export default function RegisterScreen({ navigation }: Props) {
           <PasswordRule ok={validation.passwordStrength.hasNumber} text="1 chiffre" />
         </View>
       )}
-
-      {/* Confirmation mot de passe */}
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.passwordInput}
-          value={passwordConfirm}
-          onChangeText={setPasswordConfirm}
-          placeholder="Confirmer le mot de passe"
-          placeholderTextColor="#000000"
-          secureTextEntry={!showPasswordConfirm}
+{/* Confirmation mot de passe */}
+    <View style={styles.passwordContainer}>
+      <TextInput
+        style={styles.passwordInput}
+        value={passwordConfirm}
+        onChangeText={setPasswordConfirm}
+        placeholder="Confirmer le mot de passe"
+        placeholderTextColor="#000000"
+        secureTextEntry={!showPasswordConfirm}
+      />
+      <TouchableOpacity
+        onPress={() => setShowPasswordConfirm(!showPasswordConfirm)}
+        style={styles.eyeButton}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityRole="button"
+        accessibilityLabel={showPasswordConfirm ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+      >
+        <Ionicons
+          name={showPasswordConfirm ? 'eye-off' : 'eye'}
+          size={22}
+          color="#1A4D5C"
         />
-        <TouchableOpacity
-          onPress={() => setShowPasswordConfirm(!showPasswordConfirm)}
-          style={styles.eyeButton}
-        >
-          <Text style={styles.eyeIcon}>{showPasswordConfirm ? '' : ''}</Text>
-        </TouchableOpacity>
-      </View>
-      {showValidation && !validation.passwordsMatch && (
-        <Text style={styles.errorText}>Les mots de passe ne correspondent pas</Text>
-      )}
+      </TouchableOpacity>
+    </View>
+    {showValidation && !validation.passwordsMatch && (
+      <Text style={styles.errorText}>Les mots de passe ne correspondent pas</Text>
+    )}
 
 {/* CGU */}
 <Checkbox
