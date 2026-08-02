@@ -1,10 +1,13 @@
 import { Platform } from 'react-native';
 
-export const API_BASE_URL = Platform.select({
-    android: 'http://192.168.1.174:8080/api',
-  ios: 'http://192.168.1.174:8080/api',
-  default: 'http://192.168.1.174:8080/api',
-});
+// URL du backend en développement (ton IP locale — adapte si ton IP change)
+const DEV_API_URL = 'http://192.168.1.65:8080/api';
+
+// URL du backend en production (le VPS, en HTTPS)
+const PROD_API_URL = 'https://api.playa-rent.fr/api';
+
+// __DEV__ = true en dev (Metro/Expo), false dans un build APK/prod
+export const API_BASE_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;
 
 export const ROUTES = {
     LOGIN: '/auth/login',

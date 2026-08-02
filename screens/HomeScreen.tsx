@@ -11,14 +11,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
-import Svg, { Path } from 'react-native-svg';
 
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { useAuth } from '../context/AuthContext';
 
 import { getDonneesCarte } from '../services/CarteService';
-import type { CarteResponse, Groupe } from '../types/Carte';
+import type { Groupe } from '../types/Carte';
 import { Station } from '../types/Stations';
 import { logger } from '../utils/logger';
 import { PLAYA_LOGO_SVG } from '../constants/Logos';
@@ -26,7 +25,6 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigation';
 import { useNavigation } from '@react-navigation/native';
 import StationDetailSheet, { StationDetailSheetRef } from './StationDetailSheet';
-import { useFocusEffect } from '@react-navigation/native';
 import BlueHeader from '../components/HeaderBlue';
 import BottomNav from '../components/BottomNav';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,7 +36,6 @@ import FiltrersDrawer from '../components/FiltrersDrawer';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Centre initial : Pornic
 const INITIAL_LAT = 48.8566;
 const INITIAL_LNG = 2.3522;
 const INITIAL_ZOOM = 5;
@@ -88,7 +85,7 @@ useEffect(() => {
     loadCarte();
 }, [filtres]);
 
-// On injecte les markers
+// injection des markers
 const injectMarkers = (stationsSeules: Station[], groupes: Groupe[]) => {
     const payload = JSON.stringify({ stationsSeules, groupes });
     const script = `window.setMarkers(${JSON.stringify(payload)}); true;`;
@@ -107,7 +104,7 @@ useEffect(() => {
         loadCarte();
     },60_000);
 
-    // Nettoyage à la sortie du composant (essentiel pour éviter les memory leaks)
+    // Nettoyage à la sortie du composant 
     return () => clearInterval(interval);
 }, [filtres]);
 
@@ -304,7 +301,7 @@ useEffect(() => {
                   const stationsSeules = data.stationsSeules || [];
                   const groupes = data.groupes || [];
                   
-                  // 1. Markers stations seules (comportement classique)
+                  // Markers stations seules (comportement classique)
                   stationsSeules.forEach(function(s) {
                     const marker = L.marker([s.latitude, s.longitude], { 
                         icon: getMarkerIcon(s.etat) 
@@ -329,7 +326,7 @@ useEffect(() => {
                       allMarkers.push(marker);
                   });
                   
-                  // 2. Markers groupes (avec badge si > 1 station)
+                  //Markers groupes (avec badge si > 1 station)
                   groupes.forEach(function(g) {
                       const marker = L.marker([g.latitude, g.longitude], { 
                           icon: getMarkerIcon(g.etat) 

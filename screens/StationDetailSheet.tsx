@@ -18,7 +18,7 @@ import { Fonts } from '../constants/Fonts';
 import { logger } from '../utils/logger';
 import { getPhotosByStation } from '../services/PhotoService';
 import { Photo } from '../types/Photo';
-import { addFavori, removeFavori, existeFavori, getFavoris } from '../services/FavoriService';
+import { addFavori, removeFavori, getFavoris } from '../services/FavoriService';
 import { Ionicons } from '@expo/vector-icons';
 import EquipementsList from '../components/EquipementList';
 import { Equipement } from '../types/Equipement';
@@ -55,13 +55,13 @@ const StationDetailSheet = forwardRef<StationDetailSheetRef>((_props, ref) => {
   // Expose des méthodes au parent (HomeScreen)
 useImperativeHandle(ref, () => ({
     open: (stationId: string) => {
-        setGroupe(null);              // reset mode groupe
+        setGroupe(null);              
         setStationsDuGroupe([]);
         loadStation(stationId);
         bottomSheetRef.current?.snapToIndex(0);
     },
     openGroupe: (g: Groupe) => {
-        setStation(null);             // reset mode station
+        setStation(null);            
         setGroupe(g);
         loadStationsDuGroupe(g);
         bottomSheetRef.current?.snapToIndex(0);
@@ -196,7 +196,7 @@ const chargerPhotosGroupe = async (stations: Station[]) => {
           const data = await getPhotosByStation(s.id);
           return [s.id, data] as const;
         } catch {
-          return [s.id, []] as const;  // une station sans photo ne bloque pas les autres
+          return [s.id, []] as const; 
         }
       })
     );

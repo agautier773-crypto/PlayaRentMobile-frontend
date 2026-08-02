@@ -131,7 +131,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginHorizontal: 8,
-    // fontFamily: 'Antonio_700Bold', // décommente si Antonio est chargé
   },
   content: {
     flex: 1,

@@ -63,7 +63,7 @@ export default function RegisterScreen({ navigation }: Props) {
       if (error.statusCode === 409) {
         setErrorMessage('Cet email est déjà utilisé');
       } else if (error.statusCode === 500) {
-        setErrorMessage('Le serveur rencontre un problème, réessaie plus tard');
+        setErrorMessage('Cet email est déja utilisé');
       } else if (error.message?.includes('Network')) {
         setErrorMessage('Impossible de se connecter au serveur. Vérifie ta connexion.');
       } else {
